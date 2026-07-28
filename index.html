@@ -17620,6 +17620,25 @@ function toggleModal(id) {
                 });
             }
 
+
+            // Mở Modal xem ảnh QR lớn
+            function openQRModal() {
+                const modal = document.getElementById('qrModal');
+                modal.classList.remove('hidden');
+            }
+
+            // Đóng Modal xem ảnh QR lớn
+            function closeQRModal() {
+                const modal = document.getElementById('qrModal');
+                modal.classList.add('hidden');
+            }
+
+
+
+
+
+
+
         // Đóng modal khi click vào vùng bên ngoài (vùng nền mờ)
         window.onclick = function(event) {
             const modalList = document.getElementById('modal-list');
@@ -17780,6 +17799,41 @@ function toggleModal(id) {
 
 
 
+    <!-- Bắt đầu Modal Phóng to QR Code -->
+    <!-- Mặc định bị ẩn (class hidden), khi bấm ở ngoài viền mờ sẽ tự đóng (closeQRModal) -->
+    <div id="qrModal" class="hidden fixed inset-0 z-[100] bg-black/60 flex flex-col items-center justify-center backdrop-blur-sm transition-opacity" onclick="closeQRModal()">
+        
+        <!-- Nội dung khung trắng (event.stopPropagation() để bấm vào trong không bị đóng) -->
+        <div class="bg-white p-6 rounded-2xl shadow-2xl flex flex-col items-center gap-4 max-w-[90vw]" onclick="event.stopPropagation()">
+            
+            <!-- Nút đóng -->
+            <div class="flex justify-between w-full items-center mb-1">
+                <h3 class="font-bold text-indigo-900 text-lg uppercase tracking-tighter">Mã QR Trang Web</h3>
+                <button onclick="closeQRModal()" class="text-gray-400 hover:text-red-500 transition-colors bg-gray-50 rounded-full p-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+            </div>
+            
+            <!-- Ảnh QR phóng to -->
+            <div class="border border-indigo-100 p-2 rounded-xl bg-gray-50">
+                <img src="./qrcode.png" alt="Mã QR Lớn" class="w-56 h-56 md:w-72 md:h-72 object-contain">
+            </div>
+            
+            <!-- Nút Tải về (Sử dụng thuộc tính download) -->
+            <!-- Thuộc tính download="qrcode-tungkinh.png" sẽ gợi ý tên file khi người dùng tải về -->
+            <a href="./qrcode.png" download="qrcode-tungkinh.png" class="mt-2 w-full flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-xl transition-all active:scale-95 shadow-md">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                TẢI MÃ QR VỀ MÁY
+            </a>
+            
+        </div>
+    </div>
+    <!-- Kết thúc Modal Phóng to QR Code -->
+
+
+
+
+
 
     <!-- Bắt đầu phần Footer chứa Link và QR Code -->
     <footer class="w-full bg-white border-t border-indigo-100 p-3 flex flex-wrap items-center justify-center gap-6 z-50 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
@@ -17799,17 +17853,15 @@ function toggleModal(id) {
             </button>
         </div>
 
-        <!-- Nhóm chứa QR Code -->
-        <div class="flex items-center gap-3">
+            <!-- Nhóm chứa QR Code -->
+            <div class="flex items-center gap-3">
             <span class="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">Mã QR:</span>
             
-            <!-- Chỗ để bạn chèn thẻ <img> chứa mã QR -->
-            <div class="w-12 h-12 border-2 border-dashed border-indigo-300 rounded-md bg-indigo-50 flex items-center justify-center overflow-hidden">
-                <!-- Thay dòng chữ bên dưới bằng thẻ <img> chứa QR code của bạn -->
-                <img src="./qrcode.png" alt="QR Code" class="w-full h-full object-contain">
+            <!-- Nhấn vào khung này sẽ mở Modal -->
+            <div onclick="openQRModal()" title="Nhấn để phóng to" class="w-12 h-12 border border-indigo-200 rounded-md bg-white flex items-center justify-center overflow-hidden cursor-pointer hover:border-indigo-500 transition-colors shadow-sm">
                 
-                <!-- Ví dụ cách chèn ảnh QR (bỏ comment để dùng): -->
-                <!-- <img src="duong-dan-anh-qr-cua-ban.png" alt="QR Code" class="w-full h-full object-cover"> -->
+                <img src="./qrcode.png" alt="QR Code" class="w-full h-full object-contain pointer-events-none">
+                
             </div>
         </div>
 
