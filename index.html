@@ -17607,6 +17607,19 @@ function toggleModal(id) {
             toggleModal('modal-list');
         }
 
+        // Hàm copy link
+            function copyToClipboard() {
+                const linkToCopy = "https://gptlohoi-del.github.io/tungkinh/";
+                
+                navigator.clipboard.writeText(linkToCopy).then(() => {
+                    // Có thể thay alert bằng một thông báo toast đẹp hơn nếu muốn
+                    alert("Đã copy đường dẫn: " + linkToCopy);
+                }).catch(err => {
+                    console.error('Không thể copy: ', err);
+                    alert("Trình duyệt không hỗ trợ copy tự động!");
+                });
+            }
+
         // Đóng modal khi click vào vùng bên ngoài (vùng nền mờ)
         window.onclick = function(event) {
             const modalList = document.getElementById('modal-list');
@@ -17649,6 +17662,7 @@ function toggleModal(id) {
                 }
             }
         });
+
 
 
     </script>
@@ -17763,6 +17777,54 @@ function toggleModal(id) {
             });
         }
     </script>   
-    
+
+
+
+
+    <!-- Bắt đầu phần Footer chứa Link và QR Code -->
+    <footer class="w-full bg-white border-t border-indigo-100 p-3 flex flex-wrap items-center justify-center gap-6 z-50 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+        
+        <!-- Nhóm Link và Nút Copy -->
+        <div class="flex items-center gap-2 text-sm">
+            <span class="font-bold text-indigo-800">LINK:</span>
+            <a href="https://gptlohoi-del.github.io/tungkinh/" class="text-blue-600 hover:underline" target="_blank" id="page-link">
+                https://gptlohoi-del.github.io/tungkinh/
+            </a>
+            
+            <button onclick="copyToClipboard()" class="flex items-center gap-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 px-3 py-1.5 rounded-lg font-bold transition-all active:scale-95 border border-indigo-200 ml-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                </svg>
+                COPY
+            </button>
+        </div>
+
+        <!-- Nhóm chứa QR Code -->
+        <div class="flex items-center gap-3">
+            <span class="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">Mã QR:</span>
+            
+            <!-- Chỗ để bạn chèn thẻ <img> chứa mã QR -->
+            <div class="w-12 h-12 border-2 border-dashed border-indigo-300 rounded-md bg-indigo-50 flex items-center justify-center overflow-hidden">
+                <!-- Thay dòng chữ bên dưới bằng thẻ <img> chứa QR code của bạn -->
+                <span class="text-[8px] text-indigo-400 text-center leading-tight">Chèn QR<br>vào đây</span>
+                
+                <!-- Ví dụ cách chèn ảnh QR (bỏ comment để dùng): -->
+                <!-- <img src="duong-dan-anh-qr-cua-ban.png" alt="QR Code" class="w-full h-full object-cover"> -->
+            </div>
+        </div>
+
+    </footer>
+    <!-- Kết thúc phần Footer -->
+
+
+
+
+
+
+
+
+
+
+
 </body>
 </html>
