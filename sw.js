@@ -1,4 +1,4 @@
-const CACHE_NAME = 'tung-kinh-cache-v2'; // Đã đổi sang v2 để bắt buộc trình duyệt làm mới cache
+const CACHE_NAME = 'tung-kinh-cache-v3'; // Đã đổi sang v2 để bắt buộc trình duyệt làm mới cache
 const urlsToCache = [
   './',
   './index.html',
@@ -19,18 +19,18 @@ self.addEventListener('install', event => {
   );
 });
 
-// Sự kiện chặn các request và trả về từ cache nếu có
+// Sự kiện chặn các request: Ưu tiên lấy từ mạng, nếu mất mạng thì lấy từ cache
 self.addEventListener('fetch', event => {
   event.respondWith(
-    caches.match(event.request)
+    fetch(event.request)
       .then(response => {
-        // Trả về response từ cache nếu tìm thấy
-        if (response) {
-          return response;
-        }
-        return fetch(event.request);
-      }
-    )
+        // Nếu có mạng và tải file thành công, trả về file mới nhất từ mạng
+        return response;
+      })
+      .catch(() => {
+        // Nếu không có mạng (lỗi fetch), lôi file tương ứng đã lưu trong cache ra dùng
+        return caches.match(event.request);
+      })
   );
 });
 
