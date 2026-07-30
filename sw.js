@@ -1,7 +1,8 @@
-const CACHE_NAME = 'tung-kinh-cache-v1';
+const CACHE_NAME = 'tung-kinh-cache-v2'; // Đã đổi sang v2 để bắt buộc trình duyệt làm mới cache
 const urlsToCache = [
   './',
   './index.html',
+  './data.js',           // Thêm file data.js vào danh sách cache
   './manifest.json',
   'https://cdn.tailwindcss.com',
   'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js'
