@@ -1,4 +1,4 @@
-const CACHE_NAME = 'tung-kinh-cache-v3'; // Đã đổi sang v2 để bắt buộc trình duyệt làm mới cache
+const CACHE_NAME = 'tung-kinh-cache-v4'; // Đã đổi sang v2 để bắt buộc trình duyệt làm mới cache
 const urlsToCache = [
   './',
   './index.html',
