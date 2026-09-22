@@ -352,6 +352,7 @@
             else selectedOrder.push(id);
             renderChecklists();
             updateUI();
+            updateShareableURL(); // Cập nhật URL khi chọn/bỏ chọn kinh
         }
 
         function clearAll() {
@@ -363,6 +364,9 @@
             
             // 3. Cập nhật lại vùng xem trước (sẽ hiện lại placeholder)
             updateUI();
+            
+            // Cập nhật tham số trên URL
+            updateShareableURL(); 
             
             // 4. Cuộn trang lên đầu
             window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -391,6 +395,7 @@
 
             selectedOrder.forEach(id => {
                 const item = fullData.find(d => d.id === id);
+                if(!item) return; // Bỏ qua nếu id không hợp lệ
                 
                 if (item.type === 'ritual_wrapper') {
                     // Nếu chọn "NGHI THỨC TỤNG KINH", nó sẽ tự động chèn các bài Kinh đã chọn vào giữa
@@ -423,7 +428,44 @@
             html2pdf().set(opt).from(element).save();
         }
 
+        // Khôi phục trạng thái từ URL
+        function loadStateFromURL() {
+            const params = new URLSearchParams(window.location.search);
+            const savedOrder = params.get('s'); // Lấy tham số 's'
+            if (savedOrder) {
+                // Tách chuỗi "2,4,7" thành mảng số [2, 4, 7]
+                // Lọc bỏ các id không tồn tại trong fullData để tránh lỗi
+                selectedOrder = savedOrder.split(',')
+                                          .map(id => parseInt(id, 10))
+                                          .filter(id => !isNaN(id) && fullData.some(d => d.id === id));
+            }
+        }
+
+        // Hàm cập nhật URL theo danh sách đã chọn
+        function updateShareableURL() {
+            const baseUrl = window.location.href.split('?')[0];
+            let newUrl = baseUrl;
+            
+            if (selectedOrder.length > 0) {
+                newUrl += "?s=" + selectedOrder.join(',');
+            }
+            
+            // Đổi URL trên thanh địa chỉ trình duyệt
+            window.history.replaceState(null, '', newUrl);
+            
+            // Cập nhật link hiển thị ở phần Footer
+            const pageLink = document.getElementById('page-link');
+            if (pageLink) {
+                pageLink.href = newUrl;
+                pageLink.innerText = newUrl;
+            }
+        }
+
+        // --- KHỞI TẠO TRANG BAN ĐẦU ---
+        loadStateFromURL();
         renderChecklists();
+        updateUI(); // Gọi updateUI ngay để hiển thị kinh luôn nếu link có chứa query
+        updateShareableURL(); 
         
         let currentFontSize = 1.15; // Cỡ chữ mặc định ban đầu (rem)
 
@@ -517,10 +559,11 @@
 
         // Hàm copy link
         function copyToClipboard() {
-            const linkToCopy = "https://gptlohoi-del.github.io/tungkinh/";
+            // Lấy chính xác đường link hiện tại đang có (đã bao gồm các ID bài kinh)
+            const linkToCopy = window.location.href;
             
             navigator.clipboard.writeText(linkToCopy).then(() => {
-                alert("Đã copy đường dẫn: " + linkToCopy);
+                alert("Đã copy đường dẫn: \n" + linkToCopy);
             }).catch(err => {
                 console.error('Không thể copy: ', err);
                 alert("Trình duyệt không hỗ trợ copy tự động!");
@@ -576,6 +619,17 @@
 
     </script>
     
+    <!-- Nút Copy Link thả nổi bên trái -->
+    <div class="fixed top-24 left-0 z-[100] flex flex-col gap-2">
+        <button onclick="copyToClipboard()" 
+                class="bg-indigo-600 text-white p-3 rounded-r-2xl shadow-2xl border-y-2 border-r-2 border-white hover:bg-indigo-700 active:scale-90 transition-all duration-300 flex items-center justify-center w-14 h-14"
+                title="Copy Link chia sẻ">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+            </svg>
+        </button>
+    </div>
+
     <div class="mobile-only-btn fixed bottom-0 left-0 z-[100]">
         <button onclick="toggleModal('modal-list')" class="bg-indigo-600 text-white p-4 rounded-full shadow-2xl active:scale-90 transition-all border-2 border-white">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
