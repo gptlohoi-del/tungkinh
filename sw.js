@@ -6,8 +6,7 @@ const urlsToCache = [
   './manifest.json',
   './icon-192.png',
   './icon-512.png',
-  './qrcode.png',
-  'https://cdn.tailwindcss.com'
+  './qrcode.png'
 ];
 
 self.addEventListener('install', event => {

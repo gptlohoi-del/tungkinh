@@ -14,7 +14,7 @@
             --pre-bg: #f8fafc;
             --border-color: #e2e8f0;
             --body-text: #1a202c;
-            --pre-font-size: 1.2rem; /* Dùng biến CSS để tối ưu tốc độ đổi cỡ chữ */
+            --pre-font-size: 1.2rem; 
         }
 
         #pdf-content {
@@ -143,8 +143,14 @@
             .mobile-only-btn { display: none !important; }
         }
 
-        /* --- CSS Chuyên dụng cho IN ẤN (Ctrl+P) --- */
+        /* CSS Chuẩn để in ấn nhiều trang */
         @media print {
+            body, html, .flex-col, main, .flex-1, aside {
+                height: auto !important;
+                min-height: auto !important;
+                overflow: visible !important;
+                display: block !important;
+            }
             .no-print, header, aside, .mobile-only-btn, footer, .fixed, #qrModal {
                 display: none !important;
             }
@@ -160,10 +166,10 @@
                 padding: 0 !important;
             }
             .section-hidden {
-                display: block !important; /* Mở bung tất cả nội dung bị thu gọn khi in */
+                display: block !important; 
             }
             #pdf-content h2::before, #pdf-content h3::before, #pdf-content h4::before {
-                display: none !important; /* Ẩn mũi tên tam giác khi in */
+                display: none !important; 
             }
             #pdf-content h2, #pdf-content h3, #pdf-content h4 {
                 padding-left: 0 !important;
@@ -224,19 +230,13 @@
         </aside>
     </div>
 
-    <!-- Nhúng file dữ liệu cấu trúc (data.js) -->
     <script src="./data.js" defer></script>
 
     <script>
         let selectedOrder = [];
 
-        // Xóa dấu tiếng Việt, đã bao gồm xử lý ký tự Đ/đ để tìm kiếm trơn tru
         function removeAccents(str) {
-            return str.normalize('NFD')
-                      .replace(/[\u0300-\u036f]/g, '')
-                      .replace(/đ/g, 'd')
-                      .replace(/Đ/g, 'D')
-                      .toLowerCase();
+            return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'D').toLowerCase();
         }
 
         function toggleSearch() {
@@ -246,7 +246,7 @@
             
             if (wrapper.classList.contains('hidden')) {
                 wrapper.classList.remove('hidden');
-                wrapper.classList.add('flex'); // Khắc phục xung đột hidden/flex
+                wrapper.classList.add('flex'); 
                 document.getElementById('searchInput').focus();
                 btn.classList.replace('bg-indigo-600', 'bg-red-500');
             } else {
@@ -259,7 +259,22 @@
             }
         }
 
+        // Kỹ thuật Tối ưu Tìm kiếm (Index chuỗi) + Debounce chống lag
+        let searchTimeout;
+        function indexSearchData() {
+            if (typeof fullData === 'undefined') return;
+            fullData.forEach(item => {
+                item._searchString = removeAccents(item.title + " " + (item.content || "") + " " + (item.content_open || ""));
+            });
+        }
+
+        function searchDataDebounced() {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(searchData, 300);
+        }
+
         function searchData() {
+            if (typeof fullData === 'undefined') return;
             const query = removeAccents(document.getElementById('searchInput').value.trim());
             const resultsContainer = document.getElementById('searchResults');
             
@@ -269,12 +284,7 @@
                 return;
             }
 
-            // Tìm kiếm trong cả tiêu đề và nội dung bài kinh
-            const matches = fullData.filter(item => 
-                removeAccents(item.title).includes(query) || 
-                (item.content && removeAccents(item.content).includes(query)) ||
-                (item.content_open && removeAccents(item.content_open).includes(query))
-            );
+            const matches = fullData.filter(item => item._searchString && item._searchString.includes(query));
 
             if (matches.length > 0) {
                 resultsContainer.classList.remove('hidden');
@@ -290,7 +300,6 @@
             }
         }
 
-        // Tối ưu hiệu năng: Khởi tạo DOM checklist 1 lần duy nhất
         function initChecklists() {
             const mainContainer = document.getElementById('main-checklist');
             const sutraContainer = document.getElementById('sutra-checklist');
@@ -303,7 +312,7 @@
                         <label class="flex items-center justify-between p-3 hover:bg-gray-50 rounded-lg cursor-pointer border-b border-gray-50">
                             <div class="flex items-center gap-3">
                                 <input type="checkbox" id="cb-${item.id}" class="w-5 h-5 rounded text-indigo-600" onchange="toggleSection(${item.id})">
-                                <span class="text-sm text-gray-600">${item.title}</span>
+                                <span class="item-title text-sm text-gray-600">${item.title}</span>
                             </div>
                         </label>
                     </div>`;
@@ -316,7 +325,6 @@
             sutraContainer.innerHTML = sutraHtml;
         }
 
-        // Đồng bộ trạng thái checkbox mà không phải rebuild lại DOM
         function syncChecklistsUI() {
             fullData.forEach(item => {
                 const row = document.getElementById(`item-${item.id}`);
@@ -327,12 +335,14 @@
                 const isChecked = orderIndex !== -1;
                 
                 checkbox.checked = isChecked;
-                const textSpan = row.querySelector('.text-sm');
+                const textSpan = row.querySelector('.item-title');
                 let badge = row.querySelector('.selection-number');
 
                 if (isChecked) {
-                    textSpan.classList.add('text-indigo-800', 'font-bold');
-                    textSpan.classList.remove('text-gray-600');
+                    if(textSpan) {
+                        textSpan.classList.add('text-indigo-800', 'font-bold');
+                        textSpan.classList.remove('text-gray-600');
+                    }
                     if (!badge) {
                         badge = document.createElement('span');
                         badge.className = 'selection-number';
@@ -340,8 +350,10 @@
                     }
                     badge.innerText = orderIndex + 1;
                 } else {
-                    textSpan.classList.remove('text-indigo-800', 'font-bold');
-                    textSpan.classList.add('text-gray-600');
+                    if(textSpan) {
+                        textSpan.classList.remove('text-indigo-800', 'font-bold');
+                        textSpan.classList.add('text-gray-600');
+                    }
                     if (badge) badge.remove();
                 }
             });
@@ -360,12 +372,24 @@
         }   
 
         function toggleSection(id) {
+            // Lấy tọa độ Y hiện tại của ô checkbox vừa bấm so với đỉnh màn hình
+            const container = document.getElementById(`item-${id}`);
+            const beforeRectTop = container ? container.getBoundingClientRect().top : 0;
+
             const index = selectedOrder.indexOf(id);
             if (index > -1) selectedOrder.splice(index, 1);
             else selectedOrder.push(id);
+            
             syncChecklistsUI();
             updateUI();
             updateShareableURL(); 
+            saveToLocalStorage(); // Lưu nháp
+
+            // Bù trừ cuộn màn hình để ô checkbox đứng im tại chỗ cũ
+            if (container) {
+                const afterRectTop = container.getBoundingClientRect().top;
+                window.scrollBy(0, afterRectTop - beforeRectTop);
+            }
         }
 
         function clearAll() {
@@ -373,6 +397,7 @@
             syncChecklistsUI();
             updateUI();
             updateShareableURL(); 
+            saveToLocalStorage();
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
@@ -380,7 +405,6 @@
             const previewArea = document.getElementById('pdf-content');
             const placeholder = document.getElementById('preview-placeholder');
 
-            // Lọc bỏ item lỗi/rỗng
             const validSelectedItems = selectedOrder
                 .map(id => fullData.find(d => d.id === id))
                 .filter(item => item && (item.content || item.content_open));
@@ -401,12 +425,16 @@
 
             const hasWrapper = validSelectedItems.some(item => item.type === 'ritual_wrapper');
             const renderBlocks = [];
+            let wrapperAdded = false;
 
-            // Chèn dữ liệu theo cấu trúc chuẩn
             validSelectedItems.forEach(item => {
                 if (item.type === 'ritual_wrapper') {
-                    // Mọi wrapper được chọn đều được chèn subContent vào giữa để đảm bảo không mất nội dung
-                    renderBlocks.push(item.content_open + subContent + item.content_close);
+                    if (!wrapperAdded) {
+                        renderBlocks.push(item.content_open + subContent + item.content_close);
+                        wrapperAdded = true;
+                    } else {
+                        renderBlocks.push(item.content_open + item.content_close);
+                    }
                 } 
                 else if (item.type === 'main') {
                     renderBlocks.push(item.content);
@@ -416,17 +444,29 @@
                 }
             });
 
-            // Sử dụng join để tự động ngắt trang, khắc phục triệt để lỗi trang trắng dư ở cuối
             previewArea.innerHTML = renderBlocks.join('<div style="page-break-after: always; margin: 10px 0;"></div>');
         }
 
-        function loadStateFromURL() {
+        function saveToLocalStorage() {
+            localStorage.setItem('tungKinhSelected', JSON.stringify(selectedOrder));
+        }
+
+        function loadState() {
             const params = new URLSearchParams(window.location.search);
             const savedOrder = params.get('s'); 
+            
             if (savedOrder) {
                 selectedOrder = [...new Set(savedOrder.split(',')
                     .map(id => parseInt(id, 10))
                     .filter(id => !isNaN(id) && fullData.some(d => d.id === id)))];
+            } else {
+                // Khôi phục từ LocalStorage nếu không có URL params
+                const localData = localStorage.getItem('tungKinhSelected');
+                if(localData) {
+                    try {
+                        selectedOrder = JSON.parse(localData).filter(id => fullData.some(d => d.id === id));
+                    } catch(e) {}
+                }
             }
         }
 
@@ -437,7 +477,9 @@
             } else {
                 url.searchParams.delete('s');
             }
-            window.history.replaceState(null, '', url.toString());
+            try {
+                window.history.replaceState(null, '', url.toString());
+            } catch(e) {}
             
             const pageLink = document.getElementById('page-link');
             if (pageLink) {
@@ -454,19 +496,18 @@
             if (currentFontSize > 3.0) currentFontSize = 3.0; 
             
             document.getElementById('font-size-display').innerText = currentFontSize;
-            // Tối ưu tốc độ Render bằng biến CSS
             document.documentElement.style.setProperty('--pre-font-size', currentFontSize + 'rem');
         }
 
-        // --- KHỞI TẠO ỨNG DỤNG BẢO MẬT ---
         window.addEventListener('DOMContentLoaded', () => {
             try {
                 if (typeof fullData === 'undefined') {
                     document.getElementById('preview-placeholder').innerHTML = `<p class="text-red-500 font-bold">Lỗi tải dữ liệu. Vui lòng tải lại trang!</p>`;
                     return;
                 }
+                indexSearchData();
                 initChecklists();
-                loadStateFromURL();
+                loadState();
                 syncChecklistsUI();
                 updateUI(); 
                 updateShareableURL(); 
@@ -501,8 +542,10 @@
         }
 
         function confirmClear() {
-            clearAll();
-            toggleModal('modal-list');
+            if(confirm("Bạn có chắc chắn muốn xoá tất cả lựa chọn không?")) {
+                clearAll();
+                toggleModal('modal-list');
+            }
         }
 
         function fallbackCopyTextToClipboard(text) {
@@ -529,7 +572,6 @@
                 navigator.clipboard.writeText(linkToCopy).then(() => {
                     alert("Đã copy đường dẫn: \n" + linkToCopy);
                 }).catch(err => {
-                    console.error("Lỗi clipboard API, dùng fallback:", err);
                     fallbackCopyTextToClipboard(linkToCopy);
                 });
             } else {
@@ -545,7 +587,6 @@
             document.getElementById('qrModal').classList.add('hidden');
         }
 
-        // Gom chung Event Listener
         window.addEventListener('click', function(event) {
             const modalList = document.getElementById('modal-list');
             const wrapper = document.getElementById('searchWrapper');
@@ -553,26 +594,19 @@
 
             if (event.target == modalList) modalList.classList.add('hidden');
             
-            if (wrapper && !wrapper.classList.contains('hidden') && !wrapper.contains(event.target) && !btn.contains(event.target)) {
+            if (wrapper && !wrapper.classList.contains('hidden') && btn && !btn.contains(event.target) && !wrapper.contains(event.target)) {
                 toggleSearch(); 
-            }
-        });
-
-        window.addEventListener('beforeunload', function (e) {
-            if (selectedOrder.length > 0) {
-                e.preventDefault();
-                e.returnValue = 'NẾU BẠN TẢI LẠI TRANG, CÁC BÀI KINH ĐÃ CHỌN SẼ BỊ MẤT. BẠN CÓ CHẮC CHẮN KHÔNG?';
             }
         });
 
     </script>
     
-    <!-- Float Container: Tìm kiếm & Copy Link (Góc trên phải) -->
-    <div class="no-print fixed top-3 right-0 z-[100] flex flex-col items-end gap-3">
-        <!-- Search Wrapper -->
+    <!-- Float Container (Góc trên phải): Search + Print + Copy -->
+    <div class="no-print fixed top-3 right-1 z-[100] flex flex-col items-end gap-3">
+        <!-- Search -->
         <div class="relative flex flex-col items-end">
             <div id="searchWrapper" class="hidden absolute right-16 top-0 flex-col items-end gap-2">
-                <input type="text" id="searchInput" oninput="searchData()" placeholder="Tìm tên kinh..." 
+                <input type="text" id="searchInput" oninput="searchDataDebounced()" placeholder="Tìm tên hoặc nội dung kinh..." 
                        class="w-72 md:w-80 p-3 bg-white text-indigo-900 rounded-2xl shadow-2xl border-2 border-indigo-600 outline-none">
                 <div id="searchResults" class="w-72 md:w-80 max-h-48 overflow-y-auto bg-white rounded-xl shadow-2xl border border-gray-200 hidden"></div>
             </div>
@@ -583,6 +617,13 @@
                 </svg>
             </button>
         </div>
+
+        <!-- In PDF Icon -->
+        <button onclick="window.print()" class="bg-emerald-600 text-white p-3 rounded-full shadow-2xl active:scale-90 transition-all border-2 border-white flex items-center justify-center w-14 h-14" title="In tài liệu (PDF)">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+            </svg>
+        </button>
         
         <!-- Copy Link Icon -->
         <button onclick="copyToClipboard()" class="bg-indigo-600 text-white p-3 rounded-full shadow-2xl active:scale-90 transition-all border-2 border-white flex items-center justify-center w-14 h-14" title="Copy Link chia sẻ">
@@ -678,7 +719,7 @@
     <footer class="no-print w-full bg-white border-t border-indigo-100 p-3 flex flex-wrap items-center justify-center gap-6 z-50 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
         <div class="flex items-center gap-2 text-sm">
             <span class="font-bold text-indigo-800">LINK:</span>
-            <a href="https://gptlohoi-del.github.io/tungkinh/" class="text-blue-600 hover:underline" target="_blank" id="page-link">
+            <a href="https://gptlohoi-del.github.io/tungkinh/" class="text-blue-600 hover:underline" target="_blank" rel="noopener" id="page-link">
                 https://gptlohoi-del.github.io/tungkinh/
             </a>
             
