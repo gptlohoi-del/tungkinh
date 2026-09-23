@@ -647,9 +647,11 @@
 
     </script>
     
-    <div class="no-print fixed top-3 right-1 z-[100] flex flex-col items-end gap-3">
-        <div class="relative flex flex-col items-end">
-            <div id="searchWrapper" class="hidden absolute right-16 top-0 flex-col items-end gap-2">
+    <!-- Float Container: Tìm kiếm & Copy Link (Giữa cạnh dưới) -->
+    <div class="no-print fixed bottom-2 left-1/2 -translate-x-1/2 z-[100] flex flex-row items-center gap-3">
+        <div class="relative flex flex-col items-center">
+            <!-- Ô tìm kiếm trượt ngược lên trên -->
+            <div id="searchWrapper" class="hidden absolute bottom-14 flex-col items-center gap-2">
                 <input type="text" id="searchInput" oninput="searchDataDebounced()" placeholder="Tìm tên hoặc nội dung kinh..." 
                        class="w-72 md:w-80 p-3 bg-white text-amber-900 rounded-2xl shadow-xl border-2 border-amber-600 outline-none">
                 <div id="searchResults" class="w-72 md:w-80 max-h-48 overflow-y-auto bg-white rounded-xl shadow-xl border border-amber-200 hidden"></div>
@@ -674,6 +676,9 @@
             </svg>
         </button>
     </div>
+
+
+
 
     <div class="mobile-only-btn no-print fixed bottom-0 left-0 z-[100]">
         <button aria-label="Danh mục" onclick="toggleModal('modal-list')" class="bg-amber-600 text-white p-4 rounded-full shadow-lg active:scale-90 transition-all border-2 border-white">
@@ -704,9 +709,10 @@
         </div>
     </div>
     
-    <div class="no-print fixed top-1/2 right-0 z-[100] flex flex-col gap-2">
+    <!-- Float Container: Cuộn đầu/cuối trang (Góc dưới phải) -->
+    <div class="no-print fixed bottom-2 right-2 z-[100] flex flex-col gap-2">
         <button aria-label="Về đầu trang" onclick="window.scrollTo({top: 0, behavior: 'smooth'})" 
-                class="bg-white text-amber-700 p-3 rounded-l-2xl shadow-md border-2 border-amber-600 hover:bg-amber-50 active:scale-90 transition-all duration-300"
+                class="bg-white text-amber-700 p-3 rounded-full shadow-md border-2 border-amber-600 hover:bg-amber-50 active:scale-90 transition-all duration-300"
                 title="Về đầu trang">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
@@ -714,7 +720,7 @@
         </button>
 
         <button aria-label="Xuống cuối trang" onclick="window.scrollTo({top: document.body.scrollHeight, behavior: 'smooth'})" 
-                class="bg-white text-amber-700 p-3 rounded-l-2xl shadow-md border-2 border-amber-600 hover:bg-amber-50 active:scale-90 transition-all duration-300"
+                class="bg-white text-amber-700 p-3 rounded-full shadow-md border-2 border-amber-600 hover:bg-amber-50 active:scale-90 transition-all duration-300"
                 title="Xuống cuối trang">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
@@ -742,21 +748,7 @@
         </div>
     </div>
 
-    <footer class="no-print w-full bg-white border-t border-amber-100 p-3 flex flex-wrap items-center justify-center gap-6 z-50 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
-        <div class="flex items-center gap-2 text-sm">
-            <span class="font-bold text-amber-800">LINK:</span>
-            <a href="https://gptlohoi-del.github.io/tungkinh/" class="text-amber-600 hover:underline" target="_blank" rel="noopener" id="page-link">
-                https://gptlohoi-del.github.io/tungkinh/
-            </a>
-            
-            <button aria-label="Copy Link" onclick="copyToClipboard()" class="flex items-center gap-1 bg-amber-50 hover:bg-amber-100 text-amber-700 px-3 py-1.5 rounded-lg font-bold transition-all active:scale-95 border border-amber-200 ml-2">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                </svg>
-                COPY
-            </button>
-        </div>
-
+    <footer class="no-print w-full bg-white border-t border-amber-100 p-2 flex justify-end pr-28 z-50 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
         <div class="flex items-center gap-3">
             <span class="text-[10px] font-bold text-amber-600 uppercase tracking-tighter">Mã QR:</span>
             <div onclick="openQRModal()" title="Nhấn để phóng to" class="w-12 h-12 border border-amber-200 rounded-md bg-white flex items-center justify-center overflow-hidden cursor-pointer hover:border-amber-500 transition-colors shadow-sm">
