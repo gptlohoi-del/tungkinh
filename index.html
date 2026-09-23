@@ -10,11 +10,10 @@
     <link rel="apple-touch-icon" href="./icon-192.png">
     <style>
         :root {
-            /* Đã chuyển sang tông màu Vàng Nâu (Amber/Brown) nhẹ mắt, trang nghiêm */
-            --accent-color: #d97706; /* Màu nâu vàng ấm */
-            --pre-bg: #fffff7; /* Nền giấy vàng nhạt mờ */
-            --border-color: #fde68a; /* Viền vàng sáng */
-            --body-text: #451a03; /* Chữ nâu đen dịu mắt */
+            --accent-color: #d97706; 
+            --pre-bg: #fffff7; 
+            --border-color: #fde68a; 
+            --body-text: #451a03; 
             --pre-font-size: 1.2rem; 
         }
 
@@ -152,7 +151,7 @@
                 overflow: visible !important;
                 display: block !important;
             }
-            .no-print, header, aside, .mobile-only-btn, footer, .fixed, #qrModal {
+            .no-print, header, aside, .mobile-only-btn, footer, .fixed, #qrModal, #shareMenu {
                 display: none !important;
             }
             body { background: white !important; }
@@ -175,6 +174,7 @@
             }
         }
     </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
 <body class="bg-amber-50 flex flex-col min-h-screen font-sans">
 <div class="no-print fixed top-0 left-1/2 -translate-x-1/2 z-[60] flex gap-1 bg-white/90 backdrop-blur-sm p-1 rounded-full shadow-lg border border-amber-200">
@@ -254,6 +254,20 @@
                 results.innerHTML = "";
                 results.classList.add('hidden');
                 btn.classList.replace('bg-red-500', 'bg-amber-600');
+            }
+            
+            // Đóng menu share nếu đang mở
+            document.getElementById('shareMenu').classList.add('hidden');
+        }
+
+        function toggleShareMenu() {
+            const menu = document.getElementById('shareMenu');
+            menu.classList.toggle('hidden');
+            
+            // Đóng khung tìm kiếm nếu đang mở
+            const wrapper = document.getElementById('searchWrapper');
+            if (!wrapper.classList.contains('hidden')) {
+                toggleSearch();
             }
         }
 
@@ -507,11 +521,34 @@
             try {
                 window.history.replaceState(null, '', url.toString());
             } catch(e) {}
-            
-            const pageLink = document.getElementById('page-link');
-            if (pageLink) {
-                pageLink.href = url.toString();
-                pageLink.innerText = url.toString();
+            // --- THÊM ĐOẠN NÀY ĐỂ VẼ QR ĐỘNG ---
+        const finalUrl = url.toString();
+        const qrBox = document.getElementById("qrcode-box");
+        if (qrBox) {
+            qrBox.innerHTML = ""; // Xóa mã QR cũ
+            new QRCode(qrBox, {
+                text: finalUrl,
+                width: 220,
+                height: 220,
+                colorDark : "#78350f", // Màu nâu đậm
+                colorLight : "#fffbeb", // Màu nền vàng nhạt
+                correctLevel : QRCode.CorrectLevel.M
+            });
+        }
+        }
+
+        function downloadQR() {
+            const qrBox = document.getElementById("qrcode-box");
+            const img = qrBox.querySelector("img");
+            if (img && img.src) {
+                const link = document.createElement("a");
+                link.href = img.src;
+                link.download = "qrcode-tungkinh.png";
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            } else {
+                alert("Mã QR chưa sẵn sàng!");
             }
         }
 
@@ -604,10 +641,14 @@
             } else {
                 fallbackCopyTextToClipboard(linkToCopy);
             }
+            // Đóng menu share sau khi copy
+            document.getElementById('shareMenu').classList.add('hidden');
         }
 
         function openQRModal() {
             document.getElementById('qrModal').classList.remove('hidden');
+            // Đóng menu share sau khi mở QR
+            document.getElementById('shareMenu').classList.add('hidden');
         }
 
         function closeQRModal() {
@@ -617,12 +658,20 @@
         window.addEventListener('click', function(event) {
             const modalList = document.getElementById('modal-list');
             const wrapper = document.getElementById('searchWrapper');
-            const btn = document.getElementById('searchBtn');
+            const btnSearch = document.getElementById('searchBtn');
+            const shareMenu = document.getElementById('shareMenu');
+            const btnShare = document.getElementById('shareBtn');
 
             if (event.target == modalList) modalList.classList.add('hidden');
             
-            if (wrapper && !wrapper.classList.contains('hidden') && btn && !btn.contains(event.target) && !wrapper.contains(event.target)) {
+            // Xử lý đóng Search khi click ngoài
+            if (wrapper && !wrapper.classList.contains('hidden') && btnSearch && !btnSearch.contains(event.target) && !wrapper.contains(event.target)) {
                 toggleSearch(); 
+            }
+            
+            // Xử lý đóng Share Menu khi click ngoài
+            if (shareMenu && !shareMenu.classList.contains('hidden') && btnShare && !btnShare.contains(event.target) && !shareMenu.contains(event.target)) {
+                shareMenu.classList.add('hidden');
             }
         });
 
@@ -631,10 +680,12 @@
                 const modalList = document.getElementById('modal-list');
                 const qrModal = document.getElementById('qrModal');
                 const wrapper = document.getElementById('searchWrapper');
+                const shareMenu = document.getElementById('shareMenu');
 
                 if (modalList) modalList.classList.add('hidden');
                 if (qrModal) qrModal.classList.add('hidden');
                 if (wrapper && !wrapper.classList.contains('hidden')) toggleSearch();
+                if (shareMenu && !shareMenu.classList.contains('hidden')) shareMenu.classList.add('hidden');
             }
         });
 
@@ -647,39 +698,45 @@
 
     </script>
     
-    <!-- Float Container: Tìm kiếm & Copy Link (Giữa cạnh dưới) -->
-    <div class="no-print fixed bottom-2 left-1/2 -translate-x-1/2 z-[100] flex flex-row items-center gap-3">
+    <!-- Float Container: Tìm kiếm, In, Share (Giữa cạnh dưới) -->
+    <div class="no-print fixed bottom-1 left-1/2 -translate-x-1/2 z-[100] flex flex-row items-center gap-3">
+        <!-- Search -->
         <div class="relative flex flex-col items-center">
-            <!-- Ô tìm kiếm trượt ngược lên trên -->
             <div id="searchWrapper" class="hidden absolute bottom-14 flex-col items-center gap-2">
                 <input type="text" id="searchInput" oninput="searchDataDebounced()" placeholder="Tìm tên hoặc nội dung kinh..." 
                        class="w-72 md:w-80 p-3 bg-white text-amber-900 rounded-2xl shadow-xl border-2 border-amber-600 outline-none">
                 <div id="searchResults" class="w-72 md:w-80 max-h-48 overflow-y-auto bg-white rounded-xl shadow-xl border border-amber-200 hidden"></div>
             </div>
-            
-            <button aria-label="Tìm kiếm" onclick="toggleSearch()" id="searchBtn" class="bg-amber-600 text-white p-3 rounded-full shadow-lg active:scale-90 transition-all border-2 border-white w-14 h-14 flex items-center justify-center" title="Tìm kiếm">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
+            <button aria-label="Tìm kiếm" onclick="toggleSearch()" id="searchBtn" class="bg-amber-600 text-white p-2.5 rounded-full shadow-lg active:scale-90 transition-all border-2 border-white w-12 h-12 flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
             </button>
         </div>
 
-        <button aria-label="In tài liệu" onclick="window.print()" class="bg-emerald-600 text-white p-3 rounded-full shadow-lg active:scale-90 transition-all border-2 border-white flex items-center justify-center w-14 h-14" title="In tài liệu">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-            </svg>
+        <!-- In PDF Icon -->
+        <button aria-label="In tài liệu" onclick="window.print()" class="bg-emerald-600 text-white p-2.5 rounded-full shadow-lg active:scale-90 transition-all border-2 border-white flex items-center justify-center w-12 h-12">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
         </button>
         
-        <button aria-label="Copy Link" onclick="copyToClipboard()" class="bg-amber-600 text-white p-3 rounded-full shadow-lg active:scale-90 transition-all border-2 border-white flex items-center justify-center w-14 h-14" title="Copy Link chia sẻ">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-            </svg>
-        </button>
+        <!-- Nút Share (Thay cho nút Copy cũ) -->
+        <div class="relative flex flex-col items-center">
+            <!-- Menu tùy chọn share (Bật lên) -->
+            <div id="shareMenu" class="hidden absolute bottom-14 flex-col bg-white rounded-xl shadow-xl border border-amber-200 overflow-hidden w-40">
+                <button onclick="copyToClipboard()" class="w-full px-4 py-3 text-sm font-semibold text-amber-900 hover:bg-amber-50 flex items-center gap-2 border-b border-gray-100">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+                    Copy Link
+                </button>
+                <button onclick="openQRModal()" class="w-full px-4 py-3 text-sm font-semibold text-amber-900 hover:bg-amber-50 flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm14 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" /></svg>
+                    Mã QR
+                </button>
+            </div>
+            <button aria-label="Chia sẻ" onclick="toggleShareMenu()" id="shareBtn" class="bg-amber-600 text-white p-2.5 rounded-full shadow-lg active:scale-90 transition-all border-2 border-white flex items-center justify-center w-12 h-12">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" /></svg>
+            </button>
+        </div>
     </div>
 
-
-
-
+    <!-- Nút Menu Danh mục (Góc dưới trái Mobile) -->
     <div class="mobile-only-btn no-print fixed bottom-0 left-0 z-[100]">
         <button aria-label="Danh mục" onclick="toggleModal('modal-list')" class="bg-amber-600 text-white p-4 rounded-full shadow-lg active:scale-90 transition-all border-2 border-white">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -688,6 +745,7 @@
         </button>
     </div>
 
+    <!-- Modal Danh mục nhanh -->
     <div id="modal-list" class="no-print fixed inset-0 bg-black/50 z-[110] hidden backdrop-blur-sm flex items-end justify-center">
         <div class="bg-white w-full max-w-md rounded-t-3xl p-6 space-y-4 shadow-2xl">
             <div class="flex justify-between items-center border-b border-amber-100 pb-4">
@@ -712,22 +770,16 @@
     <!-- Float Container: Cuộn đầu/cuối trang (Góc dưới phải) -->
     <div class="no-print fixed bottom-2 right-2 z-[100] flex flex-col gap-2">
         <button aria-label="Về đầu trang" onclick="window.scrollTo({top: 0, behavior: 'smooth'})" 
-                class="bg-white text-amber-700 p-3 rounded-full shadow-md border-2 border-amber-600 hover:bg-amber-50 active:scale-90 transition-all duration-300"
-                title="Về đầu trang">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
-            </svg>
+                class="bg-white text-amber-700 p-2.5 rounded-full shadow-md border-2 border-amber-600 hover:bg-amber-50 active:scale-90 transition-all duration-300">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" /></svg>
         </button>
-
         <button aria-label="Xuống cuối trang" onclick="window.scrollTo({top: document.body.scrollHeight, behavior: 'smooth'})" 
-                class="bg-white text-amber-700 p-3 rounded-full shadow-md border-2 border-amber-600 hover:bg-amber-50 active:scale-90 transition-all duration-300"
-                title="Xuống cuối trang">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-            </svg>
+                class="bg-white text-amber-700 p-2.5 rounded-full shadow-md border-2 border-amber-600 hover:bg-amber-50 active:scale-90 transition-all duration-300">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
         </button>
     </div>
 
+    <!-- Modal Phóng to QR Code -->
     <div id="qrModal" class="hidden no-print fixed inset-0 z-[100] bg-black/60 flex flex-col items-center justify-center backdrop-blur-sm transition-opacity" onclick="closeQRModal()">
         <div class="bg-white p-6 rounded-2xl shadow-2xl flex flex-col items-center gap-4 max-w-[90vw]" onclick="event.stopPropagation()">
             <div class="flex justify-between w-full items-center mb-1">
@@ -736,26 +788,23 @@
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
                 </button>
             </div>
+            <!-- Khung chứa mã QR động -->
+            <div id="qrcode-box" class="border border-amber-200 p-4 rounded-xl bg-amber-50 flex justify-center items-center w-full"></div>
             
-            <div class="border border-amber-100 p-2 rounded-xl bg-amber-50">
-                <img src="./qrcode.png" alt="Mã QR Lớn" class="w-56 h-56 md:w-72 md:h-72 object-contain">
+            <!-- Nút Tải QR mới -->
+            <button onclick="downloadQR()" class="mt-2 w-full flex items-center justify-center gap-2 bg-amber-600 hover:bg-amber-700 text-white font-bold py-3 px-4 rounded-xl transition-all active:scale-95 shadow-md">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                TẢI MÃ QR VỀ MÁY
+            </button>
+            
             </div>
             
-            <a href="./qrcode.png" download="qrcode-tungkinh.png" class="mt-2 w-full flex items-center justify-center gap-2 bg-amber-600 hover:bg-amber-700 text-white font-bold py-3 px-4 rounded-xl transition-all active:scale-95 shadow-md">
+            
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
                 TẢI MÃ QR VỀ MÁY
             </a>
         </div>
     </div>
-
-    <footer class="no-print w-full bg-white border-t border-amber-100 p-2 flex justify-end pr-28 z-50 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
-        <div class="flex items-center gap-3">
-            <span class="text-[10px] font-bold text-amber-600 uppercase tracking-tighter">Mã QR:</span>
-            <div onclick="openQRModal()" title="Nhấn để phóng to" class="w-12 h-12 border border-amber-200 rounded-md bg-white flex items-center justify-center overflow-hidden cursor-pointer hover:border-amber-500 transition-colors shadow-sm">
-                <img src="./qrcode.png" alt="QR Code" class="w-full h-full object-contain pointer-events-none">
-            </div>
-        </div>
-    </footer>
-
+    
 </body>
 </html>
