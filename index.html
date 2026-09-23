@@ -158,10 +158,8 @@
             main {
                 padding: 0 !important;
                 margin: 0 !important;
-                max-width: 100% !important;
             }
             .max-w-3xl {
-                max-width: 100% !important;
                 box-shadow: none !important;
                 padding: 0 !important;
             }
@@ -179,13 +177,13 @@
 </head>
 <body class="bg-gray-50 flex flex-col min-h-screen font-sans">
 <div class="no-print fixed top-0 left-1/2 -translate-x-1/2 z-[60] flex gap-1 bg-white/80 backdrop-blur-sm p-1 rounded-full shadow-lg border border-indigo-100">
-    <button onclick="changeFontSize(-0.1)" class="w-8 h-8 flex items-center justify-center bg-white hover:bg-red-50 text-red-600 rounded-full text-sm font-bold shadow-sm transition-all active:scale-90 border border-gray-200">
+    <button aria-label="Giảm cỡ chữ" onclick="changeFontSize(-0.1)" class="w-8 h-8 flex items-center justify-center bg-white hover:bg-red-50 text-red-600 rounded-full text-sm font-bold shadow-sm transition-all active:scale-90 border border-gray-200">
         A-
     </button>
     <div id="font-size-display" class="flex items-center px-1 text-[15px] font-bold text-indigo-900 min-w-[32px] justify-center">
         1.2
     </div>
-    <button onclick="changeFontSize(0.1)" class="w-8 h-8 flex items-center justify-center bg-white hover:bg-emerald-50 text-emerald-600 rounded-full text-sm font-bold shadow-sm transition-all active:scale-90 border border-gray-200">
+    <button aria-label="Tăng cỡ chữ" onclick="changeFontSize(0.1)" class="w-8 h-8 flex items-center justify-center bg-white hover:bg-emerald-50 text-emerald-600 rounded-full text-sm font-bold shadow-sm transition-all active:scale-90 border border-gray-200">
         A+
     </button>
 </div>
@@ -197,13 +195,13 @@
             </svg>
             <span class="text-[10px] font-bold uppercase tracking-tighter">HOME</span>
         </div>
-        <div class="text-[10px] font-bold uppercase opacity-50 pr-2">...</div>
     </header>
 
     <div class="flex flex-col md:flex-row-reverse flex-1 overflow-hidden">
-        <main class="flex-1 p-1 md:p-12 bg-gray-100 overflow-y-auto">
+        <!-- Đã thêm overflow-anchor: none để ngăn Chrome tự động cuộn sai vị trí -->
+        <main class="flex-1 p-1 md:p-12 bg-gray-100 overflow-y-auto" style="overflow-anchor: none;">
             <div class="max-w-3xl mx-auto bg-white min-h-full shadow-2xl p-1 md:p-16 rounded-sm">
-                <div id="preview-placeholder" class="text-center py-20 text-gray-300">
+                <div id="preview-placeholder" class="no-print text-center py-20 text-gray-300">
                     <p class="text-xl font-medium">Chọn nội dung kinh để hiển thị.</p>
                 </div>
                 <div id="pdf-content" class="hidden"></div>
@@ -259,7 +257,6 @@
             }
         }
 
-        // Kỹ thuật Tối ưu Tìm kiếm (Index chuỗi) + Debounce chống lag
         let searchTimeout;
         function indexSearchData() {
             if (typeof fullData === 'undefined') return;
@@ -360,6 +357,12 @@
         }
             
         function goToItem(id) {
+            document.getElementById('searchResults').classList.add('hidden');
+            
+            if (!selectedOrder.includes(id)) {
+                toggleSection(id, false); // Không chạy hàm cố định màn hình khi chọn từ thanh tìm kiếm
+            }
+
             const targetElement = document.getElementById(`item-${id}`);
             if (targetElement) {
                 targetElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -367,29 +370,60 @@
                 setTimeout(() => {
                     targetElement.classList.remove('blink-target');
                 }, 2500);
-                document.getElementById('searchResults').classList.add('hidden');
             }
+
+            setTimeout(() => {
+                const previewElement = document.getElementById(`preview-item-${id}`);
+                if (previewElement) {
+                    previewElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            }, 300);
         }   
 
-        function toggleSection(id) {
-            // Lấy tọa độ Y hiện tại của ô checkbox vừa bấm so với đỉnh màn hình
+        // preventScrollJump = true để chặn hiệu ứng giật màn hình khi click checkbox
+        function toggleSection(id, preventScrollJump = true) {
             const container = document.getElementById(`item-${id}`);
-            const beforeRectTop = container ? container.getBoundingClientRect().top : 0;
+            // Lấy khoảng cách tuyệt đối của checkbox so với đỉnh màn hình trước khi render
+            const beforeTop = container ? container.getBoundingClientRect().top : 0;
 
             const index = selectedOrder.indexOf(id);
-            if (index > -1) selectedOrder.splice(index, 1);
-            else selectedOrder.push(id);
+            if (index > -1) {
+                selectedOrder.splice(index, 1);
+            } else {
+                const itemData = fullData.find(d => d.id === id);
+                if (itemData && itemData.type === 'ritual_wrapper') {
+                    selectedOrder = selectedOrder.filter(existingId => {
+                        const existingData = fullData.find(d => d.id === existingId);
+                        return !(existingData && existingData.type === 'ritual_wrapper');
+                    });
+                }
+                selectedOrder.push(id);
+            }
             
             syncChecklistsUI();
             updateUI();
-            updateShareableURL(); 
-            saveToLocalStorage(); // Lưu nháp
 
-            // Bù trừ cuộn màn hình để ô checkbox đứng im tại chỗ cũ
-            if (container) {
-                const afterRectTop = container.getBoundingClientRect().top;
-                window.scrollBy(0, afterRectTop - beforeRectTop);
+            // Tính toán vị trí mới và kéo bù trừ ngay lập tức (không hiển thị hiệu ứng cuộn)
+            if (preventScrollJump && container) {
+                const afterTop = container.getBoundingClientRect().top;
+                const diff = afterTop - beforeTop;
+                
+                // Nếu tọa độ bị chênh lệch do DOM phình ra, ta tiến hành bù trừ
+                if (Math.abs(diff) > 1) {
+                    const html = document.documentElement;
+                    // Tạm tắt hiệu ứng cuộn mượt gốc của CSS để ngăn chặn giật nhấp nháy
+                    html.style.scrollBehavior = 'auto'; 
+                    window.scrollBy(0, diff);
+                    
+                    // Khôi phục hiệu ứng cuộn mượt sau khi bù trừ xong (1 frame)
+                    requestAnimationFrame(() => {
+                        html.style.scrollBehavior = '';
+                    });
+                }
             }
+
+            updateShareableURL(); 
+            saveToLocalStorage();
         }
 
         function clearAll() {
@@ -420,8 +454,8 @@
 
             const subContent = validSelectedItems
                 .filter(item => item.type === 'sub')
-                .map(item => item.content)
-                .join('');
+                .map(item => `<div id="preview-item-${item.id}">` + item.content + `</div>`)
+                .join('<div style="page-break-after: always; margin: 10px 0;"></div>');
 
             const hasWrapper = validSelectedItems.some(item => item.type === 'ritual_wrapper');
             const renderBlocks = [];
@@ -430,21 +464,26 @@
             validSelectedItems.forEach(item => {
                 if (item.type === 'ritual_wrapper') {
                     if (!wrapperAdded) {
-                        renderBlocks.push(item.content_open + subContent + item.content_close);
+                        renderBlocks.push(`<div id="preview-item-${item.id}">` + item.content_open + subContent + item.content_close + `</div>`);
                         wrapperAdded = true;
                     } else {
-                        renderBlocks.push(item.content_open + item.content_close);
+                        renderBlocks.push(`<div id="preview-item-${item.id}">` + item.content_open + item.content_close + `</div>`);
                     }
                 } 
                 else if (item.type === 'main') {
-                    renderBlocks.push(item.content);
+                    renderBlocks.push(`<div id="preview-item-${item.id}">` + item.content + `</div>`);
                 } 
                 else if (item.type === 'sub' && !hasWrapper) {
-                    renderBlocks.push(item.content);
+                    renderBlocks.push(`<div id="preview-item-${item.id}">` + item.content + `</div>`);
                 }
             });
 
             previewArea.innerHTML = renderBlocks.join('<div style="page-break-after: always; margin: 10px 0;"></div>');
+            
+            const preTags = document.querySelectorAll('#pdf-content pre');
+            preTags.forEach(pre => {
+                pre.style.setProperty('font-size', currentFontSize + 'rem', 'important');
+            });
         }
 
         function saveToLocalStorage() {
@@ -460,7 +499,6 @@
                     .map(id => parseInt(id, 10))
                     .filter(id => !isNaN(id) && fullData.some(d => d.id === id)))];
             } else {
-                // Khôi phục từ LocalStorage nếu không có URL params
                 const localData = localStorage.getItem('tungKinhSelected');
                 if(localData) {
                     try {
@@ -599,6 +637,25 @@
             }
         });
 
+        window.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                const modalList = document.getElementById('modal-list');
+                const qrModal = document.getElementById('qrModal');
+                const wrapper = document.getElementById('searchWrapper');
+
+                if (modalList) modalList.classList.add('hidden');
+                if (qrModal) qrModal.classList.add('hidden');
+                if (wrapper && !wrapper.classList.contains('hidden')) toggleSearch();
+            }
+        });
+
+        window.addEventListener('beforeunload', function (e) {
+            if (selectedOrder.length > 0) {
+                e.preventDefault();
+                e.returnValue = 'NẾU BẠN TẢI LẠI TRANG, CÁC BÀI KINH ĐÃ CHỌN SẼ BỊ MẤT. BẠN CÓ CHẮC CHẮN KHÔNG?';
+            }
+        });
+
     </script>
     
     <!-- Float Container (Góc trên phải): Search + Print + Copy -->
@@ -611,7 +668,7 @@
                 <div id="searchResults" class="w-72 md:w-80 max-h-48 overflow-y-auto bg-white rounded-xl shadow-2xl border border-gray-200 hidden"></div>
             </div>
             
-            <button onclick="toggleSearch()" id="searchBtn" class="bg-indigo-600 text-white p-3 rounded-full shadow-2xl active:scale-90 transition-all border-2 border-white w-14 h-14 flex items-center justify-center" title="Tìm kiếm">
+            <button aria-label="Tìm kiếm" onclick="toggleSearch()" id="searchBtn" class="bg-indigo-600 text-white p-3 rounded-full shadow-2xl active:scale-90 transition-all border-2 border-white w-14 h-14 flex items-center justify-center" title="Tìm kiếm">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                 </svg>
@@ -619,14 +676,14 @@
         </div>
 
         <!-- In PDF Icon -->
-        <button onclick="window.print()" class="bg-emerald-600 text-white p-3 rounded-full shadow-2xl active:scale-90 transition-all border-2 border-white flex items-center justify-center w-14 h-14" title="In tài liệu (PDF)">
+        <button aria-label="In tài liệu" onclick="window.print()" class="bg-emerald-600 text-white p-3 rounded-full shadow-2xl active:scale-90 transition-all border-2 border-white flex items-center justify-center w-14 h-14" title="In tài liệu (PDF)">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
             </svg>
         </button>
         
         <!-- Copy Link Icon -->
-        <button onclick="copyToClipboard()" class="bg-indigo-600 text-white p-3 rounded-full shadow-2xl active:scale-90 transition-all border-2 border-white flex items-center justify-center w-14 h-14" title="Copy Link chia sẻ">
+        <button aria-label="Copy Link" onclick="copyToClipboard()" class="bg-indigo-600 text-white p-3 rounded-full shadow-2xl active:scale-90 transition-all border-2 border-white flex items-center justify-center w-14 h-14" title="Copy Link chia sẻ">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
             </svg>
@@ -635,7 +692,7 @@
 
     <!-- Nút Menu Danh mục (Góc dưới trái Mobile) -->
     <div class="mobile-only-btn no-print fixed bottom-0 left-0 z-[100]">
-        <button onclick="toggleModal('modal-list')" class="bg-indigo-600 text-white p-4 rounded-full shadow-2xl active:scale-90 transition-all border-2 border-white">
+        <button aria-label="Danh mục" onclick="toggleModal('modal-list')" class="bg-indigo-600 text-white p-4 rounded-full shadow-2xl active:scale-90 transition-all border-2 border-white">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
             </svg>
@@ -647,7 +704,7 @@
         <div class="bg-white w-full max-w-md rounded-t-3xl p-6 space-y-4 shadow-2xl">
             <div class="flex justify-between items-center border-b pb-4">
                 <h3 class="font-extrabold text-indigo-900 tracking-tighter">DANH MỤC NHANH</h3>
-                <button onclick="toggleModal('modal-list')" class="w-8 h-8 flex items-center justify-center bg-gray-100 rounded-full text-gray-500 text-xl">&times;</button>
+                <button aria-label="Đóng danh mục" onclick="toggleModal('modal-list')" class="w-8 h-8 flex items-center justify-center bg-gray-100 rounded-full text-gray-500 text-xl">&times;</button>
             </div>
             <div class="grid grid-cols-1 gap-3 py-2">
                 <button onclick="scrollToSection('nghithuc-section')" class="flex items-center gap-3 p-4 bg-indigo-50 text-indigo-700 rounded-2xl font-bold text-left active:bg-indigo-100">
@@ -666,7 +723,7 @@
     
     <!-- Float Container: Cuộn đầu/cuối trang (Giữa phải) -->
     <div class="no-print fixed top-1/2 right-0 z-[100] flex flex-col gap-2">
-        <button onclick="window.scrollTo({top: 0, behavior: 'smooth'})" 
+        <button aria-label="Về đầu trang" onclick="window.scrollTo({top: 0, behavior: 'smooth'})" 
                 class="bg-white text-indigo-600 p-3 rounded-l-2xl shadow-2xl border-2 border-indigo-600 hover:bg-indigo-50 active:scale-90 transition-all duration-300"
                 title="Về đầu trang">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -674,7 +731,7 @@
             </svg>
         </button>
 
-        <button onclick="window.scrollTo({top: document.body.scrollHeight, behavior: 'smooth'})" 
+        <button aria-label="Xuống cuối trang" onclick="window.scrollTo({top: document.body.scrollHeight, behavior: 'smooth'})" 
                 class="bg-white text-indigo-600 p-3 rounded-l-2xl shadow-2xl border-2 border-indigo-600 hover:bg-indigo-50 active:scale-90 transition-all duration-300"
                 title="Xuống cuối trang">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -682,24 +739,13 @@
             </svg>
         </button>
     </div>
-    
-    <script>
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js')
-                    .catch((err) => {
-                        console.log('ServiceWorker đăng ký thất bại: ', err);
-                    });
-            });
-        }
-    </script>   
 
     <!-- Modal Phóng to QR Code -->
     <div id="qrModal" class="hidden no-print fixed inset-0 z-[100] bg-black/60 flex flex-col items-center justify-center backdrop-blur-sm transition-opacity" onclick="closeQRModal()">
         <div class="bg-white p-6 rounded-2xl shadow-2xl flex flex-col items-center gap-4 max-w-[90vw]" onclick="event.stopPropagation()">
             <div class="flex justify-between w-full items-center mb-1">
                 <h3 class="font-bold text-indigo-900 text-lg uppercase tracking-tighter">Mã QR Trang Web</h3>
-                <button onclick="closeQRModal()" class="text-gray-400 hover:text-red-500 transition-colors bg-gray-50 rounded-full p-1">
+                <button aria-label="Đóng QR" onclick="closeQRModal()" class="text-gray-400 hover:text-red-500 transition-colors bg-gray-50 rounded-full p-1">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
                 </button>
             </div>
@@ -723,7 +769,7 @@
                 https://gptlohoi-del.github.io/tungkinh/
             </a>
             
-            <button onclick="copyToClipboard()" class="flex items-center gap-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 px-3 py-1.5 rounded-lg font-bold transition-all active:scale-95 border border-indigo-200 ml-2">
+            <button aria-label="Copy Link" onclick="copyToClipboard()" class="flex items-center gap-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 px-3 py-1.5 rounded-lg font-bold transition-all active:scale-95 border border-indigo-200 ml-2">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
                 </svg>
