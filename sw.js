@@ -1,63 +1,54 @@
-const CACHE_NAME = 'tung-kinh-cache-v5'; // Tăng version để trình duyệt cập nhật
+const CACHE_NAME = 'tung-kinh-cache-v6'; // Đã bump version
 const urlsToCache = [
   './',
   './index.html',
   './data.js',
   './manifest.json',
-  './icon-192.png',   // Đã bổ sung
-  './icon-512.png',   // Đã bổ sung
-  './qrcode.png',     // Đã bổ sung
-  'https://cdn.tailwindcss.com',
-  'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js'
+  './icon-192.png',
+  './icon-512.png',
+  './qrcode.png',
+  'https://cdn.tailwindcss.com'
 ];
 
-// Sự kiện cài đặt: Lưu cache và ép phiên bản mới kích hoạt ngay
 self.addEventListener('install', event => {
-  self.skipWaiting(); // Bỏ qua trạng thái chờ (waiting)
+  self.skipWaiting(); 
   event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then(cache => {
-        console.log('Đã mở cache v5');
-        return cache.addAll(urlsToCache);
-      })
+    caches.open(CACHE_NAME).then(cache => cache.addAll(urlsToCache))
   );
 });
 
-// Sự kiện kích hoạt: Xóa cache cũ và chiếm quyền điều khiển trang ngay
 self.addEventListener('activate', event => {
   event.waitUntil(self.clients.claim()); 
-  const cacheWhitelist = [CACHE_NAME];
   event.waitUntil(
     caches.keys().then(cacheNames => {
       return Promise.all(
-        cacheNames.map(cacheName => {
-          if (cacheWhitelist.indexOf(cacheName) === -1) {
-            console.log('Đã xóa cache cũ:', cacheName);
-            return caches.delete(cacheName);
-          }
-        })
+        cacheNames.filter(name => name !== CACHE_NAME).map(name => caches.delete(name))
       );
     })
   );
 });
 
-// Sự kiện fetch: Chiến lược Network-First, fallback về Cache một cách an toàn
+// Chiến lược Stale-While-Revalidate (Lấy từ Cache trước, ngầm cập nhật từ Network)
 self.addEventListener('fetch', event => {
   event.respondWith(
-    fetch(event.request)
-      .catch(() => {
-        // Nếu không có mạng (fetch lỗi), tìm trong cache
-        return caches.match(event.request).then(response => {
-          if (response) {
-            return response; // Trả về file tìm thấy trong cache
-          }
-          // QUAN TRỌNG: Nếu đang mở trang (navigate) mà không tìm thấy URL chính xác,
-          // thì tự động nạp file ./index.html từ cache.
-          if (event.request.mode === 'navigate') {
-            return caches.match('./index.html');
-          }
-          return undefined; // Trả về lỗi nếu không phải là điều hướng trang
-        });
-      })
+    caches.match(event.request).then(cachedResponse => {
+      const fetchPromise = fetch(event.request).then(networkResponse => {
+        // Chỉ lưu vào cache nếu request thành công và là dữ liệu basic
+        if (networkResponse && networkResponse.status === 200 && networkResponse.type === 'basic') {
+          const responseToCache = networkResponse.clone();
+          caches.open(CACHE_NAME).then(cache => cache.put(event.request, responseToCache));
+        }
+        return networkResponse;
+      }).catch(() => {
+        // Fallback an toàn khi offline hoàn toàn
+        if (event.request.mode === 'navigate') {
+          return caches.match('./index.html');
+        }
+        return new Response('Network error', { status: 408, headers: { 'Content-Type': 'text/plain' } });
+      });
+      
+      // Trả về cache ngay lập tức nếu có, nếu không thì chờ Network
+      return cachedResponse || fetchPromise;
+    })
   );
 });

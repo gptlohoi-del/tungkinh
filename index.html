@@ -14,6 +14,7 @@
             --pre-bg: #f8fafc;
             --border-color: #e2e8f0;
             --body-text: #1a202c;
+            --pre-font-size: 1.2rem; /* Dùng biến CSS để tối ưu tốc độ đổi cỡ chữ */
         }
 
         #pdf-content {
@@ -31,7 +32,6 @@
         }
 
         #pdf-content h1 { 
-            color: #4f46e5 !important;
             font-size: 2.2rem !important; 
             text-align: center; 
             border-bottom: 3px solid var(--accent-color);
@@ -41,21 +41,18 @@
 
         #pdf-content h2 { 
             font-size: 2rem !important; 
-            color: #4f46e5 !important;
             border-bottom: 1px solid var(--border-color);
             padding-bottom: 8px;
         }
         
         #pdf-content h3 { 
             font-size: 1.5rem !important; 
-            color: #4f46e5 !important;
             border-bottom: 1px solid var(--border-color);
             padding-bottom: 8px;
         }
         
         #pdf-content h4 { 
             font-size: 1.2rem !important; 
-            color: #4f46e5 !important;
             border-bottom: 1px solid var(--border-color);
             padding-bottom: 8px;
         }
@@ -66,7 +63,7 @@
             border-radius: 0.5rem;
             border-left: 4px solid var(--accent-color) !important;
             font-family: "Times New Roman", Times, serif !important;
-            font-size: 1.2rem !important;
+            font-size: var(--pre-font-size) !important;
             line-height: 1.4 !important;
             white-space: pre-wrap !important;
             word-wrap: break-word !important;
@@ -110,11 +107,6 @@
         .section-hidden {
             display: none !important;
         }
-        
-        @keyframes slideUp {
-            from { transform: translateY(100%); }
-            to { transform: translateY(0); }
-        }
 
         #main-checklist label, 
         #sutra-checklist label,
@@ -146,16 +138,41 @@
             z-index: 10;
         }
 
-        /* Fix hiển thị nút Mobile */
         .mobile-only-btn { display: block; }
         @media (min-width: 768px) {
             .mobile-only-btn { display: none !important; }
         }
-        
+
+        /* --- CSS Chuyên dụng cho IN ẤN (Ctrl+P) --- */
+        @media print {
+            .no-print, header, aside, .mobile-only-btn, footer, .fixed, #qrModal {
+                display: none !important;
+            }
+            body { background: white !important; }
+            main {
+                padding: 0 !important;
+                margin: 0 !important;
+                max-width: 100% !important;
+            }
+            .max-w-3xl {
+                max-width: 100% !important;
+                box-shadow: none !important;
+                padding: 0 !important;
+            }
+            .section-hidden {
+                display: block !important; /* Mở bung tất cả nội dung bị thu gọn khi in */
+            }
+            #pdf-content h2::before, #pdf-content h3::before, #pdf-content h4::before {
+                display: none !important; /* Ẩn mũi tên tam giác khi in */
+            }
+            #pdf-content h2, #pdf-content h3, #pdf-content h4 {
+                padding-left: 0 !important;
+            }
+        }
     </style>
 </head>
 <body class="bg-gray-50 flex flex-col min-h-screen font-sans">
-<div class="fixed top-0 left-1/2 -translate-x-1/2 z-[60] flex gap-1 bg-white/80 backdrop-blur-sm p-1 rounded-full shadow-lg border border-indigo-100">
+<div class="no-print fixed top-0 left-1/2 -translate-x-1/2 z-[60] flex gap-1 bg-white/80 backdrop-blur-sm p-1 rounded-full shadow-lg border border-indigo-100">
     <button onclick="changeFontSize(-0.1)" class="w-8 h-8 flex items-center justify-center bg-white hover:bg-red-50 text-red-600 rounded-full text-sm font-bold shadow-sm transition-all active:scale-90 border border-gray-200">
         A-
     </button>
@@ -167,7 +184,7 @@
     </button>
 </div>
 
-    <header class="bg-indigo-900 text-white p-1.5 sticky top-0 z-50 flex justify-between items-center shadow-lg">
+    <header class="no-print bg-indigo-900 text-white p-1.5 sticky top-0 z-50 flex justify-between items-center shadow-lg">
         <div onclick="window.scrollTo(0,0)" class="cursor-pointer hover:bg-indigo-800 p-1.5 rounded-lg transition-all flex items-center gap-1.5">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h4m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
@@ -187,8 +204,8 @@
             </div>
         </main>
     
-        <aside class="w-full md:w-96 bg-white border-r overflow-y-auto p-4 space-y-6">
-            <button onclick="clearAll()" class="w-full mb-4 py-2.5 bg-red-500 hover:bg-red-600 text-white text-xs font-bold rounded-xl transition-all active:scale-95 uppercase tracking-tighter shadow-md flex items-center justify-center gap-2">
+        <aside class="no-print w-full md:w-96 bg-white border-r overflow-y-auto p-4 space-y-6">
+            <button onclick="confirmClear()" class="w-full mb-4 py-2.5 bg-red-500 hover:bg-red-600 text-white text-xs font-bold rounded-xl transition-all active:scale-95 uppercase tracking-tighter shadow-md flex items-center justify-center gap-2">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                 </svg>
@@ -208,14 +225,18 @@
     </div>
 
     <!-- Nhúng file dữ liệu cấu trúc (data.js) -->
-    <script src="./data.js"></script>
+    <script src="./data.js" defer></script>
 
     <script>
         let selectedOrder = [];
 
-        // Xóa dấu tiếng Việt để tìm kiếm chính xác
+        // Xóa dấu tiếng Việt, đã bao gồm xử lý ký tự Đ/đ để tìm kiếm trơn tru
         function removeAccents(str) {
-            return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+            return str.normalize('NFD')
+                      .replace(/[\u0300-\u036f]/g, '')
+                      .replace(/đ/g, 'd')
+                      .replace(/Đ/g, 'D')
+                      .toLowerCase();
         }
 
         function toggleSearch() {
@@ -225,10 +246,12 @@
             
             if (wrapper.classList.contains('hidden')) {
                 wrapper.classList.remove('hidden');
+                wrapper.classList.add('flex'); // Khắc phục xung đột hidden/flex
                 document.getElementById('searchInput').focus();
                 btn.classList.replace('bg-indigo-600', 'bg-red-500');
             } else {
                 wrapper.classList.add('hidden');
+                wrapper.classList.remove('flex');
                 document.getElementById('searchInput').value = "";
                 results.innerHTML = "";
                 results.classList.add('hidden');
@@ -246,7 +269,12 @@
                 return;
             }
 
-            const matches = fullData.filter(item => removeAccents(item.title).includes(query));
+            // Tìm kiếm trong cả tiêu đề và nội dung bài kinh
+            const matches = fullData.filter(item => 
+                removeAccents(item.title).includes(query) || 
+                (item.content && removeAccents(item.content).includes(query)) ||
+                (item.content_open && removeAccents(item.content_open).includes(query))
+            );
 
             if (matches.length > 0) {
                 resultsContainer.classList.remove('hidden');
@@ -262,26 +290,21 @@
             }
         }
 
-        function renderChecklists() {
+        // Tối ưu hiệu năng: Khởi tạo DOM checklist 1 lần duy nhất
+        function initChecklists() {
             const mainContainer = document.getElementById('main-checklist');
             const sutraContainer = document.getElementById('sutra-checklist');
             let mainHtml = "";
             let sutraHtml = "";
 
             fullData.forEach(item => {
-                const orderIndex = selectedOrder.indexOf(item.id);
-                const isChecked = orderIndex !== -1;
-                
                 const rowHtml = `
                     <div id="item-${item.id}" class="transition-all duration-300">
                         <label class="flex items-center justify-between p-3 hover:bg-gray-50 rounded-lg cursor-pointer border-b border-gray-50">
                             <div class="flex items-center gap-3">
-                                <input type="checkbox" ${isChecked ? 'checked' : ''} 
-                                        class="w-5 h-5 rounded text-indigo-600" 
-                                        onchange="toggleSection(${item.id})">
-                                <span class="text-sm ${isChecked ? 'text-indigo-800 font-bold' : 'text-gray-600'}">${item.title}</span>
+                                <input type="checkbox" id="cb-${item.id}" class="w-5 h-5 rounded text-indigo-600" onchange="toggleSection(${item.id})">
+                                <span class="text-sm text-gray-600">${item.title}</span>
                             </div>
-                            ${isChecked ? `<span class="selection-number">${orderIndex + 1}</span>` : ''}
                         </label>
                     </div>`;
                 
@@ -291,6 +314,37 @@
 
             mainContainer.innerHTML = mainHtml;
             sutraContainer.innerHTML = sutraHtml;
+        }
+
+        // Đồng bộ trạng thái checkbox mà không phải rebuild lại DOM
+        function syncChecklistsUI() {
+            fullData.forEach(item => {
+                const row = document.getElementById(`item-${item.id}`);
+                const checkbox = document.getElementById(`cb-${item.id}`);
+                if (!row || !checkbox) return;
+
+                const orderIndex = selectedOrder.indexOf(item.id);
+                const isChecked = orderIndex !== -1;
+                
+                checkbox.checked = isChecked;
+                const textSpan = row.querySelector('.text-sm');
+                let badge = row.querySelector('.selection-number');
+
+                if (isChecked) {
+                    textSpan.classList.add('text-indigo-800', 'font-bold');
+                    textSpan.classList.remove('text-gray-600');
+                    if (!badge) {
+                        badge = document.createElement('span');
+                        badge.className = 'selection-number';
+                        row.querySelector('label').appendChild(badge);
+                    }
+                    badge.innerText = orderIndex + 1;
+                } else {
+                    textSpan.classList.remove('text-indigo-800', 'font-bold');
+                    textSpan.classList.add('text-gray-600');
+                    if (badge) badge.remove();
+                }
+            });
         }
             
         function goToItem(id) {
@@ -309,14 +363,14 @@
             const index = selectedOrder.indexOf(id);
             if (index > -1) selectedOrder.splice(index, 1);
             else selectedOrder.push(id);
-            renderChecklists();
+            syncChecklistsUI();
             updateUI();
             updateShareableURL(); 
         }
 
         function clearAll() {
             selectedOrder = [];
-            renderChecklists();
+            syncChecklistsUI();
             updateUI();
             updateShareableURL(); 
             window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -326,7 +380,12 @@
             const previewArea = document.getElementById('pdf-content');
             const placeholder = document.getElementById('preview-placeholder');
 
-            if (selectedOrder.length === 0) {
+            // Lọc bỏ item lỗi/rỗng
+            const validSelectedItems = selectedOrder
+                .map(id => fullData.find(d => d.id === id))
+                .filter(item => item && (item.content || item.content_open));
+
+            if (validSelectedItems.length === 0) {
                 previewArea.classList.add('hidden');
                 placeholder.classList.remove('hidden');
                 return;
@@ -335,54 +394,30 @@
             placeholder.classList.add('hidden');
             previewArea.classList.remove('hidden');
 
-            const subContent = selectedOrder
-                .map(id => fullData.find(d => d.id === id))
-                .filter(item => item && item.type === 'sub')
+            const subContent = validSelectedItems
+                .filter(item => item.type === 'sub')
                 .map(item => item.content)
                 .join('');
 
-            let finalHtml = "";
-            let wrapperAdded = false;
-            const hasWrapper = selectedOrder.some(id => {
-                const d = fullData.find(x => x.id === id);
-                return d && d.type === 'ritual_wrapper';
-            });
+            const hasWrapper = validSelectedItems.some(item => item.type === 'ritual_wrapper');
+            const renderBlocks = [];
 
-            const validSelectedItems = selectedOrder
-                .map(id => fullData.find(d => d.id === id))
-                .filter(item => item);
-
-            validSelectedItems.forEach((item, index) => {
-                if (!item.content && !item.content_open) return; 
-
+            // Chèn dữ liệu theo cấu trúc chuẩn
+            validSelectedItems.forEach(item => {
                 if (item.type === 'ritual_wrapper') {
-                    if (!wrapperAdded) {
-                        finalHtml += item.content_open + subContent + item.content_close;
-                        wrapperAdded = true;
-                    } else {
-                        finalHtml += item.content_open + item.content_close;
-                    }
+                    // Mọi wrapper được chọn đều được chèn subContent vào giữa để đảm bảo không mất nội dung
+                    renderBlocks.push(item.content_open + subContent + item.content_close);
                 } 
                 else if (item.type === 'main') {
-                    finalHtml += item.content;
+                    renderBlocks.push(item.content);
                 } 
-                else if (item.type === 'sub') {
-                    if (!hasWrapper) {
-                        finalHtml += item.content;
-                    }
-                }
-                
-                if (index < validSelectedItems.length - 1 && !(item.type === 'sub' && hasWrapper)) {
-                    finalHtml += '<div style="page-break-after: always; margin: 10px 0;"></div>';
+                else if (item.type === 'sub' && !hasWrapper) {
+                    renderBlocks.push(item.content);
                 }
             });
 
-            previewArea.innerHTML = finalHtml;
-            
-            const preTags = document.querySelectorAll('#pdf-content pre');
-            preTags.forEach(pre => {
-                pre.style.setProperty('font-size', currentFontSize + 'rem', 'important');
-            });
+            // Sử dụng join để tự động ngắt trang, khắc phục triệt để lỗi trang trắng dư ở cuối
+            previewArea.innerHTML = renderBlocks.join('<div style="page-break-after: always; margin: 10px 0;"></div>');
         }
 
         function loadStateFromURL() {
@@ -396,17 +431,18 @@
         }
 
         function updateShareableURL() {
-            const baseUrl = window.location.href.split('?')[0];
-            let newUrl = baseUrl;
+            const url = new URL(window.location.href);
             if (selectedOrder.length > 0) {
-                newUrl += "?s=" + selectedOrder.join(',');
+                url.searchParams.set('s', selectedOrder.join(','));
+            } else {
+                url.searchParams.delete('s');
             }
-            window.history.replaceState(null, '', newUrl);
+            window.history.replaceState(null, '', url.toString());
             
             const pageLink = document.getElementById('page-link');
             if (pageLink) {
-                pageLink.href = newUrl;
-                pageLink.innerText = newUrl;
+                pageLink.href = url.toString();
+                pageLink.innerText = url.toString();
             }
         }
 
@@ -418,21 +454,26 @@
             if (currentFontSize > 3.0) currentFontSize = 3.0; 
             
             document.getElementById('font-size-display').innerText = currentFontSize;
-
-            const preTags = document.querySelectorAll('#pdf-content pre');
-            preTags.forEach(pre => {
-                pre.style.setProperty('font-size', currentFontSize + 'rem', 'important');
-            });
+            // Tối ưu tốc độ Render bằng biến CSS
+            document.documentElement.style.setProperty('--pre-font-size', currentFontSize + 'rem');
         }
 
-        try {
-            loadStateFromURL();
-            renderChecklists();
-            updateUI(); 
-            updateShareableURL(); 
-        } catch (error) {
-            console.error("Lỗi khởi tạo:", error);
-        }
+        // --- KHỞI TẠO ỨNG DỤNG BẢO MẬT ---
+        window.addEventListener('DOMContentLoaded', () => {
+            try {
+                if (typeof fullData === 'undefined') {
+                    document.getElementById('preview-placeholder').innerHTML = `<p class="text-red-500 font-bold">Lỗi tải dữ liệu. Vui lòng tải lại trang!</p>`;
+                    return;
+                }
+                initChecklists();
+                loadStateFromURL();
+                syncChecklistsUI();
+                updateUI(); 
+                updateShareableURL(); 
+            } catch (error) {
+                console.error("Lỗi khởi tạo:", error);
+            }
+        });
 
         document.getElementById('pdf-content').addEventListener('click', function(e) {
             const header = e.target.closest('h2, h3, h4');
@@ -448,7 +489,7 @@
 
         function toggleModal(id) {
             const modal = document.getElementById(id);
-            modal.classList.toggle('hidden');
+            if (modal) modal.classList.toggle('hidden');
         }
 
         function scrollToSection(id) {
@@ -464,30 +505,35 @@
             toggleModal('modal-list');
         }
 
+        function fallbackCopyTextToClipboard(text) {
+            let textArea = document.createElement("textarea");
+            textArea.value = text;
+            textArea.style.position = "fixed";
+            textArea.style.left = "-999999px";
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            try {
+                document.execCommand('copy');
+                alert("Đã copy đường dẫn: \n" + text);
+            } catch (err) {
+                console.error('Lỗi Fallback Copy', err);
+                alert("Trình duyệt không hỗ trợ copy tự động!");
+            }
+            textArea.remove();
+        }
+
         function copyToClipboard() {
             const linkToCopy = window.location.href;
-            
             if (navigator.clipboard && window.isSecureContext) {
                 navigator.clipboard.writeText(linkToCopy).then(() => {
                     alert("Đã copy đường dẫn: \n" + linkToCopy);
+                }).catch(err => {
+                    console.error("Lỗi clipboard API, dùng fallback:", err);
+                    fallbackCopyTextToClipboard(linkToCopy);
                 });
             } else {
-                let textArea = document.createElement("textarea");
-                textArea.value = linkToCopy;
-                textArea.style.position = "fixed";
-                textArea.style.left = "-999999px";
-                textArea.style.top = "-999999px";
-                document.body.appendChild(textArea);
-                textArea.focus();
-                textArea.select();
-                try {
-                    document.execCommand('copy');
-                    alert("Đã copy đường dẫn: \n" + linkToCopy);
-                } catch (err) {
-                    console.error('Lỗi Fallback Copy', err);
-                    alert("Trình duyệt không hỗ trợ copy tự động!");
-                }
-                textArea.remove();
+                fallbackCopyTextToClipboard(linkToCopy);
             }
         }
 
@@ -507,7 +553,7 @@
 
             if (event.target == modalList) modalList.classList.add('hidden');
             
-            if (!wrapper.classList.contains('hidden') && !wrapper.contains(event.target) && !btn.contains(event.target)) {
+            if (wrapper && !wrapper.classList.contains('hidden') && !wrapper.contains(event.target) && !btn.contains(event.target)) {
                 toggleSearch(); 
             }
         });
@@ -522,10 +568,10 @@
     </script>
     
     <!-- Float Container: Tìm kiếm & Copy Link (Góc trên phải) -->
-    <div class="fixed top-3 right-3 z-[100] flex flex-col items-end gap-3">
+    <div class="no-print fixed top-3 right-3 z-[100] flex flex-col items-end gap-3">
         <!-- Search Wrapper -->
         <div class="relative flex flex-col items-end">
-            <div id="searchWrapper" class="hidden absolute right-16 top-0 flex flex-col items-end gap-2">
+            <div id="searchWrapper" class="hidden absolute right-16 top-0 flex-col items-end gap-2">
                 <input type="text" id="searchInput" oninput="searchData()" placeholder="Tìm tên kinh..." 
                        class="w-72 md:w-80 p-3 bg-white text-indigo-900 rounded-2xl shadow-2xl border-2 border-indigo-600 outline-none">
                 <div id="searchResults" class="w-72 md:w-80 max-h-48 overflow-y-auto bg-white rounded-xl shadow-2xl border border-gray-200 hidden"></div>
@@ -547,7 +593,7 @@
     </div>
 
     <!-- Nút Menu Danh mục (Góc dưới trái Mobile) -->
-    <div class="mobile-only-btn fixed bottom-0 left-0 z-[100]">
+    <div class="mobile-only-btn no-print fixed bottom-0 left-0 z-[100]">
         <button onclick="toggleModal('modal-list')" class="bg-indigo-600 text-white p-4 rounded-full shadow-2xl active:scale-90 transition-all border-2 border-white">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
@@ -556,7 +602,7 @@
     </div>
 
     <!-- Modal Danh mục nhanh -->
-    <div id="modal-list" class="fixed inset-0 bg-black/50 z-[110] hidden backdrop-blur-sm flex items-end justify-center">
+    <div id="modal-list" class="no-print fixed inset-0 bg-black/50 z-[110] hidden backdrop-blur-sm flex items-end justify-center">
         <div class="bg-white w-full max-w-md rounded-t-3xl p-6 space-y-4 shadow-2xl">
             <div class="flex justify-between items-center border-b pb-4">
                 <h3 class="font-extrabold text-indigo-900 tracking-tighter">DANH MỤC NHANH</h3>
@@ -578,7 +624,7 @@
     </div>
     
     <!-- Float Container: Cuộn đầu/cuối trang (Giữa phải) -->
-    <div class="fixed top-1/2 right-0 z-[100] flex flex-col gap-2">
+    <div class="no-print fixed top-1/2 right-0 z-[100] flex flex-col gap-2">
         <button onclick="window.scrollTo({top: 0, behavior: 'smooth'})" 
                 class="bg-white text-indigo-600 p-3 rounded-l-2xl shadow-2xl border-2 border-indigo-600 hover:bg-indigo-50 active:scale-90 transition-all duration-300"
                 title="Về đầu trang">
@@ -608,7 +654,7 @@
     </script>   
 
     <!-- Modal Phóng to QR Code -->
-    <div id="qrModal" class="hidden fixed inset-0 z-[100] bg-black/60 flex flex-col items-center justify-center backdrop-blur-sm transition-opacity" onclick="closeQRModal()">
+    <div id="qrModal" class="hidden no-print fixed inset-0 z-[100] bg-black/60 flex flex-col items-center justify-center backdrop-blur-sm transition-opacity" onclick="closeQRModal()">
         <div class="bg-white p-6 rounded-2xl shadow-2xl flex flex-col items-center gap-4 max-w-[90vw]" onclick="event.stopPropagation()">
             <div class="flex justify-between w-full items-center mb-1">
                 <h3 class="font-bold text-indigo-900 text-lg uppercase tracking-tighter">Mã QR Trang Web</h3>
@@ -629,7 +675,7 @@
     </div>
 
     <!-- Footer chứa Link và QR Code -->
-    <footer class="w-full bg-white border-t border-indigo-100 p-3 flex flex-wrap items-center justify-center gap-6 z-50 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+    <footer class="no-print w-full bg-white border-t border-indigo-100 p-3 flex flex-wrap items-center justify-center gap-6 z-50 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
         <div class="flex items-center gap-2 text-sm">
             <span class="font-bold text-indigo-800">LINK:</span>
             <a href="https://gptlohoi-del.github.io/tungkinh/" class="text-blue-600 hover:underline" target="_blank" id="page-link">
