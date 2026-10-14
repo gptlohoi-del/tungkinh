@@ -221,21 +221,34 @@ async function staleWhileRevalidate(event, cacheKey) {
  * Điều hướng trang: network-first có giới hạn thời gian (mạng yếu không bị treo),
  * fallback HTML đã cache, cuối cùng là trang thông báo ngoại tuyến.
  */
+/** Làm sạch cờ redirected để trình duyệt không chặn khi điều hướng offline */
+function cleanRedirect(response) {
+  if (!response || !response.redirected) return response;
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers: response.headers
+  });
+}
+
 async function handleNavigation(event) {
   const response = await fetchWithTimeout(event.request, NAVIGATION_TIMEOUT_MS);
 
   if (response && response.status === 200) {
-    // Chỉ lưu khi thực sự là trang HTML: tránh ghi đè khoá HTML bằng ảnh/file
-    // trong trường hợp người dùng mở trực tiếp hoặc tải một file (vd qrcode.png).
     if (isHtmlResponse(response)) {
-      // Lưu dưới khoá chuẩn hoá: mọi link ?s=... dùng chung 1 entry HTML
-      runInBackground(event, putInCache(OFFLINE_URL, response.clone()));
+      const cleanResp = cleanRedirect(response.clone());
+      runInBackground(event, putInCache(OFFLINE_URL, cleanResp));
     }
     return response;
   }
 
-  const cached = await caches.match(OFFLINE_URL, { ignoreSearch: true, ignoreVary: true });
-  return cached || offlineFallbackPage();
+  // Tìm theo OFFLINE_URL ('./index.html'), nếu không có thì tìm tiếp theo './' hoặc request hiện tại
+  const cached =
+    (await caches.match(OFFLINE_URL, { ignoreSearch: true, ignoreVary: true })) ||
+    (await caches.match('./', { ignoreSearch: true, ignoreVary: true })) ||
+    (await caches.match(event.request, { ignoreSearch: true, ignoreVary: true }));
+
+  return cached ? cleanRedirect(cached) : offlineFallbackPage();
 }
       
 
