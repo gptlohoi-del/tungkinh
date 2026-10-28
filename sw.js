@@ -97,7 +97,7 @@ function offlineFallbackPage() {
 /* ------------------------------- Cấu hình -------------------------------- */
 
 /** Đổi CACHE_VERSION mỗi khi thay đổi danh sách/chiến lược cache */
-const CACHE_VERSION = 'v8';
+const CACHE_VERSION = 'v9-reader';
 const CACHE_PREFIX = 'tung-kinh-cache-';
 const CACHE_NAME = CACHE_PREFIX + CACHE_VERSION;
 

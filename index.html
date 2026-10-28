@@ -14,17 +14,19 @@
             --pre-bg: #fffff7; 
             --border-color: #fde68a; 
             --body-text: #451a03; 
-            --pre-font-size: 1.2rem; 
+            --pre-font-size: 1.4375rem;
+            --reader-font: Arial, sans-serif;
+            --reader-weight: 500; 
         }
 
         #pdf-content {
-            font-family: "Times New Roman", Times, serif !important;
+            font-family: var(--reader-font) !important;
             color: var(--body-text);
         }
 
         #pdf-content h1, #pdf-content h2, #pdf-content h3, #pdf-content h4, #pdf-content h5 {
             color: var(--accent-color) !important;
-            font-weight: bold !important;
+            font-weight: 700 !important;
             margin-top: 1.5rem;
             margin-bottom: 0.75rem;
             line-height: 1.3;
@@ -62,9 +64,10 @@
             padding: 0.5rem !important;
             border-radius: 0.5rem;
             border-left: 4px solid var(--accent-color) !important;
-            font-family: "Times New Roman", Times, serif !important;
+            font-family: var(--reader-font) !important;
             font-size: var(--pre-font-size) !important;
-            line-height: 1.4 !important;
+            line-height: 1.7 !important;
+            font-weight: var(--reader-weight) !important;
             white-space: pre-wrap !important;
             word-wrap: break-word !important;
             margin: 1rem 0 !important;
@@ -177,26 +180,44 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
 <body class="bg-amber-50 flex flex-col min-h-screen font-sans">
-<div class="no-print fixed top-0 left-1/2 -translate-x-1/2 z-[60] flex gap-1 bg-white/90 backdrop-blur-sm p-1 rounded-full shadow-lg border border-amber-200">
-    <button aria-label="Giảm cỡ chữ" onclick="changeFontSize(-0.1)" class="w-8 h-8 flex items-center justify-center bg-white hover:bg-amber-100 text-amber-700 rounded-full text-sm font-bold shadow-sm transition-all active:scale-90 border border-amber-200">
-        A-
-    </button>
-    <div id="font-size-display" class="flex items-center px-1 text-[15px] font-bold text-amber-900 min-w-[32px] justify-center">
-        1.2
+<style>
+    .reader-toolbar { display:flex; align-items:center; justify-content:space-between; gap:3px; width:100%; min-width:0; }
+    .reader-controls { display:flex; align-items:center; gap:3px; flex-wrap:nowrap; min-width:0; }
+    .reader-controls button { min-width:30px; height:34px; padding:0 5px; border-radius:7px; border:1px solid #fcd34d; background:#fff; color:#78350f; font-weight:700; }
+    .reader-controls select { min-width:0; max-width:90px; height:34px; border-radius:7px; padding:0 2px; background:#fff; color:#78350f; font-size:13px; font-weight:600; }
+    #font-weight-select { max-width:76px; }
+    #font-size-display { min-width:27px; text-align:center; font-weight:700; font-size:13px; color:#fff; }
+    #pdf-content pre { overflow-wrap:anywhere; }
+    #pdf-content h2, #pdf-content h3, #pdf-content h4 { cursor:pointer; }
+    .item-title { font-size:17px !important; line-height:1.5; font-weight:600; }
+    aside label { min-height:48px; }
+    @media (max-width:370px) { .reader-controls { gap:2px; } .reader-controls select { max-width:75px; font-size:12px; } #font-weight-select { max-width:65px; } }
+</style>
+<header class="no-print bg-amber-800 text-amber-50 p-1 sticky top-0 z-50 shadow-lg">
+  <div class="reader-toolbar">
+    <button aria-label="HOME, về đầu trang" onclick="window.scrollTo({top:0,behavior:'smooth'})" style="display:flex;align-items:center;gap:3px;font-weight:700;font-size:12px;flex-shrink:0;padding:6px 2px">⌂ HOME</button>
+    <div class="reader-controls" aria-label="Tùy chỉnh chữ đọc kinh">
+      <button aria-label="Giảm cỡ chữ" onclick="changeFontSize(-0.1)">A−</button>
+      <span id="font-size-display" aria-label="Cỡ chữ">23</span>
+      <button aria-label="Tăng cỡ chữ" onclick="changeFontSize(0.1)">A+</button>
+      <select id="font-family-select" aria-label="Chọn phông chữ" onchange="setReaderFont(this.value)">
+        <option value="arial">Arial</option>
+        <option value="noto">Noto Sans</option>
+        <option value="times">Times New Roman</option>
+        <option value="georgia">Georgia</option>
+        <option value="tahoma">Tahoma</option>
+        <option value="verdana">Verdana</option>
+        <option value="trebuchet">Trebuchet MS</option>
+      </select>
+      <select id="font-weight-select" aria-label="Độ đậm chữ" onchange="setReaderWeight(this.value)">
+        <option value="400">Thường</option>
+        <option value="500">Vừa</option>
+        <option value="600">Đậm vừa</option>
+        <option value="700">Đậm</option>
+      </select>
     </div>
-    <button aria-label="Tăng cỡ chữ" onclick="changeFontSize(0.1)" class="w-8 h-8 flex items-center justify-center bg-white hover:bg-amber-100 text-amber-700 rounded-full text-sm font-bold shadow-sm transition-all active:scale-90 border border-amber-200">
-        A+
-    </button>
-</div>
-
-    <header class="no-print bg-amber-800 text-amber-50 p-1.5 sticky top-0 z-50 flex justify-between items-center shadow-lg">
-        <div onclick="window.scrollTo(0,0)" class="cursor-pointer hover:bg-amber-700 p-1.5 rounded-lg transition-all flex items-center gap-1.5">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h4m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-            </svg>
-            <span class="text-[10px] font-bold uppercase tracking-tighter">HOME</span>
-        </div>
-    </header>
+  </div>
+</header>
 
     <div class="flex flex-col md:flex-row-reverse flex-1 overflow-hidden">
         <main class="flex-1 p-1 md:p-12 bg-amber-50 overflow-y-auto" style="overflow-anchor: none;">
@@ -216,6 +237,15 @@
                 XOÁ LỰA CHỌN
             </button>
 
+            <section class="bg-amber-50 border border-amber-200 rounded-xl p-3" aria-label="Bộ bài tụng đã lưu">
+              <h2 class="font-bold text-amber-900 mb-2 text-base">BỘ BÀI TỤNG</h2>
+              <div class="flex flex-wrap gap-2">
+                <select id="saved-profile" aria-label="Chọn bộ bài tụng" class="flex-1 min-w-0 border border-amber-300 rounded-lg p-2 text-base bg-white"><option value="">Chọn bộ đã lưu</option></select>
+                <button onclick="loadReadingProfile()" class="bg-amber-700 text-white rounded-lg px-3 py-2 font-semibold">Mở</button>
+                <button onclick="saveReadingProfile()" class="bg-white text-amber-900 border border-amber-300 rounded-lg px-3 py-2 font-semibold">Lưu bộ</button>
+                <button onclick="deleteReadingProfile()" class="bg-white text-red-700 border border-red-200 rounded-lg px-3 py-2 font-semibold">Xóa bộ</button>
+              </div>
+            </section>
             <div>
                 <h2 class="font-bold text-amber-800 mb-3 border-b border-amber-200 pb-2 text-sm uppercase" id="nghithuc-section">NGHI THỨC</h2>
                 <div id="main-checklist" class="space-y-1"></div>
@@ -275,7 +305,7 @@
         function indexSearchData() {
             if (typeof fullData === 'undefined') return;
             fullData.forEach(item => {
-                item._searchString = removeAccents(item.title + " " + (item.content || "") + " " + (item.content_open || ""));
+                item._searchString = removeAccents(item.title + " " + (item.content || "") + " " + (item.content_open || "") + " " + (item.content_close || ""));
             });
         }
 
@@ -295,7 +325,7 @@
                 return;
             }
 
-            const matches = fullData.filter(item => item._searchString && item._searchString.includes(query));
+            const matches = fullData.filter(item => !isPlaceholder(item) && item._searchString && item._searchString.includes(query));
 
             if (matches.length > 0) {
                 resultsContainer.classList.remove('hidden');
@@ -311,13 +341,50 @@
             }
         }
 
+        const PROFILE_KEY='tungKinhReadingProfilesV1';
+        function readProfiles() {
+            try { const x=JSON.parse(localStorage.getItem(PROFILE_KEY)||'{}'); return x&&typeof x==='object'&&!Array.isArray(x)?x:{}; }
+            catch(e) { return {}; }
+        }
+        function refreshProfiles() {
+            const el=document.getElementById('saved-profile'), prev=el.value, profiles=readProfiles();
+            el.replaceChildren(new Option('Chọn bộ đã lưu',''));
+            Object.keys(profiles).sort((a,b)=>a.localeCompare(b,'vi')).forEach(n=>el.add(new Option(n,n)));
+            if(Object.prototype.hasOwnProperty.call(profiles,prev)) el.value=prev;
+        }
+        function saveReadingProfile() {
+            const name=(prompt('Tên bộ bài tụng (ví dụ: Buổi sáng):')||'').trim().slice(0,60);
+            if(!name) return;
+            const profiles=readProfiles();
+            if(Object.prototype.hasOwnProperty.call(profiles,name)&&!confirm('Ghi đè bộ bài tụng này?')) return;
+            profiles[name]=[...selectedOrder];
+            try { localStorage.setItem(PROFILE_KEY,JSON.stringify(profiles)); refreshProfiles(); document.getElementById('saved-profile').value=name; }
+            catch(e) { alert('Không lưu được bộ bài tụng trên thiết bị này.'); }
+        }
+        function loadReadingProfile() {
+            const data=readProfiles()[document.getElementById('saved-profile').value];
+            if(!Array.isArray(data)) return;
+            selectedOrder=[...new Set(data.filter(id=>fullData.some(d=>d.id===id&&!isPlaceholder(d))))];
+            syncChecklistsUI(); updateUI(); saveToLocalStorage(); updateShareableURL();
+            document.getElementById('modal-list')?.classList.add('hidden');
+            window.scrollTo({top:0,behavior:'smooth'});
+        }
+        function deleteReadingProfile() {
+            const name=document.getElementById('saved-profile').value;
+            if(!name||!confirm('Xóa bộ bài tụng "'+name+'"?')) return;
+            const profiles=readProfiles(); delete profiles[name];
+            localStorage.setItem(PROFILE_KEY,JSON.stringify(profiles)); refreshProfiles();
+        }
+        function isPlaceholder(item) {
+            return [56,57,58,124,125].includes(item.id) && !(item.content || item.content_open || item.content_close || '').trim();
+        }
         function initChecklists() {
             const mainContainer = document.getElementById('main-checklist');
             const sutraContainer = document.getElementById('sutra-checklist');
             let mainHtml = "";
             let sutraHtml = "";
 
-            fullData.forEach(item => {
+            fullData.filter(item => !isPlaceholder(item)).forEach(item => {
                 const rowHtml = `
                     <div id="item-${item.id}" class="transition-all duration-300">
                         <label class="flex items-center justify-between p-3 hover:bg-amber-50 rounded-lg cursor-pointer border-b border-amber-50">
@@ -430,16 +497,16 @@
                 }
             }
 
-            updateShareableURL(); 
             saveToLocalStorage();
+            updateShareableURL();
         }
 
         function clearAll() {
             selectedOrder = [];
             syncChecklistsUI();
             updateUI();
-            updateShareableURL(); 
             saveToLocalStorage();
+            updateShareableURL();
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
@@ -500,12 +567,12 @@
             if (savedOrder) {
                 selectedOrder = [...new Set(savedOrder.split(',')
                     .map(id => parseInt(id, 10))
-                    .filter(id => !isNaN(id) && fullData.some(d => d.id === id)))];
+                    .filter(id => !isNaN(id) && fullData.some(d => d.id === id && !isPlaceholder(d))))];
             } else {
                 const localData = localStorage.getItem('tungKinhSelected');
                 if(localData) {
                     try {
-                        selectedOrder = JSON.parse(localData).filter(id => fullData.some(d => d.id === id));
+                        selectedOrder = JSON.parse(localData).filter(id => fullData.some(d => d.id === id && !isPlaceholder(d)));
                     } catch(e) {}
                 }
             }
@@ -521,20 +588,17 @@
             try {
                 window.history.replaceState(null, '', url.toString());
             } catch(e) {}
-            // --- THÊM ĐOẠN NÀY ĐỂ VẼ QR ĐỘNG ---
-        const finalUrl = url.toString();
-        const qrBox = document.getElementById("qrcode-box");
-        if (qrBox) {
-            qrBox.innerHTML = ""; // Xóa mã QR cũ
-            new QRCode(qrBox, {
-                text: finalUrl,
-                width: 220,
-                height: 220,
-                colorDark : "#78350f", // Màu nâu đậm
-                colorLight : "#fffbeb", // Màu nền vàng nhạt
-                correctLevel : QRCode.CorrectLevel.M
-            });
-        }
+                // QR không được phép chặn thao tác lưu hoặc chọn bài kinh.
+            const qrBox = document.getElementById('qrcode-box');
+            if (qrBox && typeof QRCode !== 'undefined') {
+                try {
+                    qrBox.innerHTML = '';
+                    new QRCode(qrBox, { text: url.toString(), width: 220, height: 220,
+                        colorDark:'#78350f', colorLight:'#fffbeb', correctLevel:QRCode.CorrectLevel.M });
+                } catch (error) { console.warn('Không tạo được QR:', error); }
+            } else if (qrBox) {
+                qrBox.textContent = 'Mã QR chưa sẵn sàng. Bạn vẫn có thể sao chép liên kết.';
+            }
         }
 
         function downloadQR() {
@@ -552,15 +616,41 @@
             }
         }
 
-        let currentFontSize = 1.2; 
-
+        const READER_FONTS = {
+            arial:'Arial, sans-serif', noto:'"Noto Sans", Arial, sans-serif',
+            times:'"Times New Roman", Times, serif', georgia:'Georgia, serif',
+            tahoma:'Tahoma, sans-serif', verdana:'Verdana, sans-serif',
+            trebuchet:'"Trebuchet MS", Arial, sans-serif'
+        };
+        let currentFontSize = 1.4375;
+        function saveReaderSettings() {
+            try { localStorage.setItem('tungKinhReaderSettings', JSON.stringify({
+                size:currentFontSize, font:document.getElementById('font-family-select').value,
+                weight:document.getElementById('font-weight-select').value
+            })); } catch(e) { console.warn('Không lưu được tùy chọn chữ',e); }
+        }
+        function applyReaderSettings() {
+            document.documentElement.style.setProperty('--pre-font-size',currentFontSize+'rem');
+            document.documentElement.style.setProperty('--reader-font',READER_FONTS[document.getElementById('font-family-select').value] || READER_FONTS.arial);
+            document.documentElement.style.setProperty('--reader-weight',document.getElementById('font-weight-select').value);
+            document.getElementById('font-size-display').textContent=Math.round(currentFontSize*16);
+            saveReaderSettings();
+        }
         function changeFontSize(delta) {
-            currentFontSize = parseFloat((currentFontSize + delta).toFixed(2));
-            if (currentFontSize < 0.5) currentFontSize = 0.5;
-            if (currentFontSize > 3.0) currentFontSize = 3.0; 
-            
-            document.getElementById('font-size-display').innerText = currentFontSize;
-            document.documentElement.style.setProperty('--pre-font-size', currentFontSize + 'rem');
+            currentFontSize=Math.max(1,Math.min(3,Math.round((currentFontSize+delta)*100)/100));
+            applyReaderSettings();
+        }
+        function setReaderFont(font) { if(READER_FONTS[font]) applyReaderSettings(); }
+        function setReaderWeight(weight) { if(['400','500','600','700'].includes(weight)) applyReaderSettings(); }
+        function loadReaderSettings() {
+            try {
+                const v=JSON.parse(localStorage.getItem('tungKinhReaderSettings')||'{}');
+                if(Number.isFinite(v.size)) currentFontSize=Math.max(1,Math.min(3,v.size));
+                if(READER_FONTS[v.font]) document.getElementById('font-family-select').value=v.font;
+                if(['400','500','600','700'].includes(v.weight)) document.getElementById('font-weight-select').value=v.weight;
+                else document.getElementById('font-weight-select').value='550';
+            } catch(e) {}
+            applyReaderSettings();
         }
 
         window.addEventListener('DOMContentLoaded', () => {
@@ -569,26 +659,46 @@
                     document.getElementById('preview-placeholder').innerHTML = `<p class="text-red-500 font-bold">Lỗi tải dữ liệu. Vui lòng tải lại trang!</p>`;
                     return;
                 }
+                if ('serviceWorker' in navigator && !location.pathname.includes('/modules/')) {
+                    navigator.serviceWorker.register('./sw.js').catch(e => console.warn('SW:',e));
+                }
+                loadReaderSettings();
+                refreshProfiles();
                 indexSearchData();
                 initChecklists();
                 loadState();
                 syncChecklistsUI();
                 updateUI(); 
-                updateShareableURL(); 
+                updateShareableURL();
+                const pos=Number(sessionStorage.getItem('tungKinhScrollY')||0);
+                if(pos>0) requestAnimationFrame(()=>window.scrollTo(0,pos));
             } catch (error) {
                 console.error("Lỗi khởi tạo:", error);
             }
         });
 
-        document.getElementById('pdf-content').addEventListener('click', function(e) {
+        let saveScrollPending=false;
+        window.addEventListener('scroll',()=>{
+            if(saveScrollPending) return;
+            saveScrollPending=true;
+            requestAnimationFrame(()=>{
+                try { sessionStorage.setItem('tungKinhScrollY',String(Math.round(window.scrollY))); } catch(e) {}
+                saveScrollPending=false;
+            });
+        },{passive:true});
+        document.getElementById('pdf-content').addEventListener('click' , function(e) {
             const header = e.target.closest('h2, h3, h4');
             if (!header) return;
 
-            header.classList.toggle('is-collapsed');
-            let next = header.nextElementSibling;
-            while (next && !['H1', 'H2', 'H3', 'H4'].includes(next.tagName)) {
-                next.classList.toggle('section-hidden');
-                next = next.nextElementSibling;
+            const level=Number(header.tagName.slice(1));
+            const collapse=!header.classList.contains('is-collapsed');
+            header.classList.toggle('is-collapsed',collapse);
+            let next=header.nextElementSibling;
+            while(next) {
+                const nextLevel=/^H[1-4]$/.test(next.tagName) ? Number(next.tagName.slice(1)) : 99;
+                if(nextLevel<=level) break;
+                next.classList.toggle('section-hidden',collapse);
+                next=next.nextElementSibling;
             }
         });
 
@@ -608,7 +718,7 @@
         function confirmClear() {
             if(confirm("Bạn có chắc chắn muốn xoá tất cả lựa chọn không?")) {
                 clearAll();
-                toggleModal('modal-list');
+                document.getElementById('modal-list')?.classList.add('hidden');
             }
         }
 
@@ -798,13 +908,6 @@
             </button>
             
             </div>
-            
-            
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
-                TẢI MÃ QR VỀ MÁY
-            </a>
-        </div>
-    </div>
     
 </body>
 </html>
