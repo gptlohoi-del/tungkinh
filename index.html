@@ -191,6 +191,14 @@
     #pdf-content h2, #pdf-content h3, #pdf-content h4 { cursor:pointer; }
     .item-title { font-size:17px !important; line-height:1.5; font-weight:600; }
     aside label { min-height:48px; }
+
+    /* Khung tìm kiếm: rộng gần hết màn hình điện thoại, không tràn mép. */
+    #searchWrapper { width: min(520px, calc(100vw - 24px)); align-items: stretch; }
+    #searchInput, #searchResults { box-sizing: border-box; width: 100%; min-width: 0; }
+    #searchResults { max-height: min(45vh, 360px); overflow-y: auto; }
+    /* Tên kết quả dài tự xuống dòng, không bị cắt bởi dấu ba chấm. */
+    .search-result-title { flex: 1 1 0%; min-width: 0; white-space: normal; overflow-wrap: anywhere; line-height: 1.5; }
+    .search-result-type { flex: 0 0 auto; white-space: nowrap; }
     @media (max-width:370px) { .reader-controls { gap:2px; } .reader-controls select { max-width:75px; font-size:12px; } #font-weight-select { max-width:65px; } }
 </style>
 <header class="no-print bg-amber-800 text-amber-50 p-1 sticky top-0 z-50 shadow-lg">
@@ -330,9 +338,9 @@
             if (matches.length > 0) {
                 resultsContainer.classList.remove('hidden');
                 resultsContainer.innerHTML = matches.map(item => `
-                    <div onclick="goToItem(${item.id})" class="p-3 hover:bg-amber-50 border-b border-amber-100 text-sm text-amber-900 cursor-pointer flex justify-between items-center">
-                        <span class="truncate pr-2">${item.title}</span>
-                        <span class="text-[10px] text-amber-500 font-bold whitespace-nowrap">${item.type === 'sub' ? 'KINH' : 'NGHI THỨC'}</span>
+                    <div onclick="goToItem(${item.id})" class="p-3 hover:bg-amber-50 border-b border-amber-100 text-sm text-amber-900 cursor-pointer flex items-start justify-between gap-2">
+                        <span class="search-result-title">${item.title}</span>
+                        <span class="search-result-type text-[10px] text-amber-500 font-bold">${item.type === 'sub' ? 'KINH' : 'NGHI THỨC'}</span>
                     </div>
                 `).join('');
             } else {
@@ -810,13 +818,15 @@
     
     <!-- Float Container: Tìm kiếm, In, Share (Giữa cạnh dưới) -->
     <div class="no-print fixed bottom-1 left-1/2 -translate-x-1/2 z-[100] flex flex-row items-center gap-3">
+        <!-- Khung kết quả canh giữa theo cả cụm nút, tránh tràn màn hình điện thoại. -->
+        <div id="searchWrapper" class="hidden absolute bottom-14 left-1/2 -translate-x-1/2 flex-col gap-2">
+            <input type="text" id="searchInput" oninput="searchDataDebounced()" placeholder="Tìm tên hoặc nội dung kinh..."
+                   aria-label="Tìm tên hoặc nội dung kinh"
+                   class="p-3 bg-white text-amber-900 rounded-2xl shadow-xl border-2 border-amber-600 outline-none">
+            <div id="searchResults" class="bg-white rounded-xl shadow-xl border border-amber-200 hidden"></div>
+        </div>
         <!-- Search -->
         <div class="relative flex flex-col items-center">
-            <div id="searchWrapper" class="hidden absolute bottom-14 flex-col items-center gap-2">
-                <input type="text" id="searchInput" oninput="searchDataDebounced()" placeholder="Tìm tên hoặc nội dung kinh..." 
-                       class="w-72 md:w-80 p-3 bg-white text-amber-900 rounded-2xl shadow-xl border-2 border-amber-600 outline-none">
-                <div id="searchResults" class="w-72 md:w-80 max-h-48 overflow-y-auto bg-white rounded-xl shadow-xl border border-amber-200 hidden"></div>
-            </div>
             <button aria-label="Tìm kiếm" onclick="toggleSearch()" id="searchBtn" class="bg-amber-600 text-white p-2.5 rounded-full shadow-lg active:scale-90 transition-all border-2 border-white w-12 h-12 flex items-center justify-center">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
             </button>
