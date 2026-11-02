@@ -466,6 +466,37 @@
         .numeric-step { flex-basis: 34px; width: 34px; min-width: 34px; }
         .settings-field.numeric-setting-field { padding: 8px; }
     }
+
+    /* Cài đặt nâng cao: ẩn gọn, chỉ dùng khi chủ động mở. */
+    .advanced-config-box { margin:18px 0 8px; background:#fffaf0; border:1px solid #efc98b; border-radius:13px; overflow:hidden; }
+    .advanced-config-box > summary { list-style:none; cursor:pointer; padding:14px 12px;
+        font-size:14px; font-weight:800; color:#78350f; display:flex; align-items:center;
+        justify-content:space-between; gap:10px; min-height:48px; }
+    .advanced-config-box > summary::-webkit-details-marker { display:none; }
+    .advanced-config-box > summary::after { content:'▾'; font-size:18px; transition:transform .2s; }
+    .advanced-config-box[open] > summary::after { transform:rotate(180deg); }
+    .advanced-config-inner { padding:0 12px 16px; border-top:1px solid #f5dfb7; }
+    .advanced-config-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; margin:12px 0; }
+    .advanced-config-grid label { display:flex; flex-direction:column; gap:5px; min-width:0;
+        font-size:12px; font-weight:800; color:#78350f; }
+    .advanced-config-grid input { width:100%; min-width:0; height:44px; border:1px solid #d9b477;
+        border-radius:9px; background:#fff; font-size:16px; color:#451a03; padding:7px 9px;
+        box-sizing:border-box; font-variant-numeric:tabular-nums; }
+    .advanced-config-grid input:focus { outline:2px solid #d97706; outline-offset:1px; }
+    .advanced-config-actions { display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; }
+    .advanced-config-actions button { flex:1 1 145px; min-height:44px; padding:8px;
+        border-radius:9px; font-size:13px; font-weight:800; border:1px solid #d6a65a;
+        background:white; color:#78350f; }
+    .advanced-config-actions .advanced-danger { border-color:#f9b8ae; color:#991b1b; background:#fff7f6; }
+    #advanced-config-status { min-height:36px; padding:9px 10px; margin-top:9px;
+        font-size:13px; line-height:1.5; border-radius:9px; background:#f0fdf4; color:#166534; }
+    #advanced-config-status.is-error { background:#fef2f2; color:#991b1b; }
+    #advanced-confirm-box { border:1px solid #fca5a5; background:#fff7f7; border-radius:10px;
+        padding:11px; margin-top:10px; color:#7f1d1d; font-size:13px; line-height:1.5; }
+    #advanced-confirm-box[hidden] { display:none!important; }
+    #advanced-confirm-box button { min-height:42px; border:1px solid #e9a0a0; background:white;
+        color:#7f1d1d; border-radius:9px; padding:8px 12px; font-weight:750; }
+    #advanced-confirm-box .advanced-confirm-yes { background:#b91c1c; color:white; }
     #clear-confirm-modal {position:fixed;inset:0;z-index:350;background:#0007;
         display:flex;align-items:center;justify-content:center;padding:20px;}
     #clear-confirm-modal[hidden] {display:none!important;}
@@ -562,6 +593,71 @@
             tocLineHeight:  { min: 0.5, max: 2.2, step: 0.1, default: 1.5 }, // giãn dòng tên dài
             opacity:        { min: 0,   max: 70,  step: 1,   default: 65 }   // %: độ mờ nút nổi
         };
+        // Cấu hình gốc là bản sao bất biến; các tùy chỉnh trên máy được lưu riêng.
+        // Không bao giờ sửa trực tiếp các giá trị gốc khi người dùng chỉnh trên điện thoại.
+        const FACTORY_NUMERIC_SETTINGS = Object.freeze(Object.fromEntries(
+            Object.entries(NUMERIC_SETTINGS).map(([key,cfg]) => [key,Object.freeze({...cfg})])
+        ));
+        const NUMERIC_OVERRIDES_KEY = 'tungKinhNumericSettingsOverridesV1';
+        const ADVANCED_NUMERIC_LABELS = {
+            fontSize:'Kích cỡ chữ nội dung kinh (px)',
+            readerMargin:'Lề trái = lề phải (px)',
+            lineHeight:'Khoảng cách dòng',
+            settingsHeight:'Chiều cao cửa sổ SETTING (%)',
+            tocFontSize:'Cỡ chữ tên kinh, nghi thức (px)',
+            tocItemGap:'Khoảng cách giữa các mục (px)',
+            tocLineHeight:'Giãn dòng tên bài dài',
+            opacity:'Độ trong suốt nút nổi (%)'
+        };
+        // Khoảng kỹ thuật bảo vệ giao diện, rộng hơn giới hạn sử dụng mặc định.
+        // Riêng chiều cao bảng và độ trong suốt có chặn để không mất khả năng thao tác.
+        const ADVANCED_SAFETY_LIMITS = {
+            fontSize:[1,160], readerMargin:[0,200], lineHeight:[0.1,5],
+            settingsHeight:[25,95], tocFontSize:[1,100], tocItemGap:[0,100],
+            tocLineHeight:[0.1,5], opacity:[0,95]
+        };
+        function validateNumericConfig(setting, candidate) {
+            if (!Object.prototype.hasOwnProperty.call(FACTORY_NUMERIC_SETTINGS,setting))
+                return 'Không nhận diện được thông số.';
+            const c=candidate;
+            if (!c || ['min','max','step','default'].some(k => typeof c[k] !== 'number' || !Number.isFinite(c[k])))
+                return 'Nhập đủ bốn giá trị số hợp lệ.';
+            if (c.min >= c.max) return 'MIN phải nhỏ hơn MAX.';
+            if (c.step <= 0 || c.step < 0.001) return 'STEP phải từ 0.001 trở lên.';
+            if (c.default < c.min || c.default > c.max) return 'DEFAULT phải nằm trong khoảng MIN–MAX.';
+            const [safeMin,safeMax]=ADVANCED_SAFETY_LIMITS[setting];
+            if (c.min < safeMin || c.max > safeMax)
+                return 'Giới hạn an toàn của mục này là '+safeMin+'–'+safeMax+'.';
+            if (c.step > c.max-c.min) return 'STEP không được lớn hơn khoảng MAX − MIN.';
+            if (['min','max','step','default'].some(k => {
+                const str=String(c[k]);
+                return str.includes('e') || (str.split('.')[1]||'').length>4;
+            })) return 'Chỉ dùng tối đa 4 chữ số thập phân.';
+            return '';
+        }
+        function loadNumericOverrides() {
+            try {
+                const saved=JSON.parse(localStorage.getItem(NUMERIC_OVERRIDES_KEY)||'{}');
+                if(!saved || typeof saved!=='object' || Array.isArray(saved)) return;
+                for (const setting of Object.keys(FACTORY_NUMERIC_SETTINGS)) {
+                    if (!Object.prototype.hasOwnProperty.call(saved,setting)) continue;
+                    const config=saved[setting];
+                    if (!validateNumericConfig(setting,config)) Object.assign(NUMERIC_SETTINGS[setting],config);
+                }
+            } catch(e) { console.warn('Bỏ qua cấu hình nâng cao không hợp lệ',e); }
+        }
+        function saveNumericOverrides() {
+            try {
+                const overrides={};
+                for (const setting of Object.keys(FACTORY_NUMERIC_SETTINGS)) {
+                    if (['min','max','step','default'].some(k => NUMERIC_SETTINGS[setting][k]!==FACTORY_NUMERIC_SETTINGS[setting][k]))
+                        overrides[setting]={...NUMERIC_SETTINGS[setting]};
+                }
+                if (Object.keys(overrides).length) localStorage.setItem(NUMERIC_OVERRIDES_KEY,JSON.stringify(overrides));
+                else localStorage.removeItem(NUMERIC_OVERRIDES_KEY);
+                return true;
+            } catch(e) {console.warn('Không lưu được cấu hình nâng cao',e);return false;}
+        }
         // Tương thích dữ liệu cũ: localStorage lưu cỡ chữ theo bội số của 16px.
         // Không thay đổi số này khi sửa MIN/MAX/STEP/DEFAULT phía trên.
         const LEGACY_FONT_BASE_PX = 16;
@@ -611,6 +707,143 @@
                 const c=NUMERIC_SETTINGS[key];
                 if (c) el.textContent=formatNumeric(key,c.min)+'–'+formatNumeric(key,c.max);
             });
+        }
+
+        // Cài đặt nâng cao chỉ ghi nhận sau khi nhập xong và rời ô (sự kiện change),
+        // tránh lưu trạng thái gõ dở. Không có nút LƯU.
+        function advancedConfigStatus(message,isError=false) {
+            const el=document.getElementById('advanced-config-status');
+            if(!el) return;
+            el.textContent=message;
+            el.classList.toggle('is-error',isError);
+        }
+        function populateAdvancedNumericPicker() {
+            const select=document.getElementById('advanced-numeric-select');
+            if(!select) return;
+            select.replaceChildren(...Object.keys(ADVANCED_NUMERIC_LABELS).map(setting =>
+                new Option(ADVANCED_NUMERIC_LABELS[setting],setting)
+            ));
+            renderAdvancedNumericEditor();
+        }
+        function renderAdvancedNumericEditor() {
+            const setting=document.getElementById('advanced-numeric-select')?.value;
+            const c=NUMERIC_SETTINGS[setting];
+            if(!c) return;
+            for(const key of ['min','max','step','default'])
+                document.getElementById('advanced-'+key).value=String(c[key]);
+            const [low,high]=ADVANCED_SAFETY_LIMITS[setting];
+            document.getElementById('advanced-safe-hint').textContent=
+                'Giới hạn an toàn: '+low+'–'+high+'. DEFAULT là giá trị khi chưa có cài đặt hoặc khi khôi phục giá trị sử dụng.';
+            cancelAdvancedReset();
+            advancedConfigStatus('Đang dùng: MIN '+c.min+' · MAX '+c.max+' · STEP '+c.step+' · DEFAULT '+c.default+'.');
+        }
+        function readAdvancedNumericCandidate() {
+            const result={};
+            for(const key of ['min','max','step','default']) {
+                const raw=document.getElementById('advanced-'+key).value.trim();
+                if(raw==='') return null;
+                result[key]=Number(raw);
+            }
+            return result;
+        }
+        function previewAdvancedNumericEdit() {
+            const setting=document.getElementById('advanced-numeric-select').value;
+            const c=readAdvancedNumericCandidate();
+            const error=validateNumericConfig(setting,c);
+            if(error) advancedConfigStatus('Chưa lưu: '+error,true);
+            else advancedConfigStatus('Giá trị hợp lệ. Tự lưu khi bạn rời ô nhập.');
+        }
+        function commitAdvancedNumericEdit() {
+            const setting=document.getElementById('advanced-numeric-select').value;
+            const c=readAdvancedNumericCandidate();
+            const error=validateNumericConfig(setting,c);
+            if(error){advancedConfigStatus('Không lưu: '+error,true);return;}
+            // DEFAULT cần nằm trên lưới STEP. Nếu không, thông báo làm tròn rõ ràng.
+            const requestedDefault=c.default;
+            const snapped=c.min+Math.round((c.default-c.min)/c.step)*c.step;
+            c.default=Number(Math.max(c.min,Math.min(c.max,snapped)).toFixed(6));
+            const snappedNotice=Math.abs(requestedDefault-c.default)>1e-8
+                ? ' DEFAULT được làm tròn từ '+requestedDefault+' thành '+c.default+' để khớp STEP.' : '';
+            const before={...NUMERIC_SETTINGS[setting]};
+            Object.assign(NUMERIC_SETTINGS[setting],c);
+            if(!saveNumericOverrides()) {
+                Object.assign(NUMERIC_SETTINGS[setting],before);
+                advancedConfigStatus('Không thể ghi vào bộ nhớ thiết bị. Thay đổi đã được hoàn tác.',true);
+                return;
+            }
+            syncNumericConfigToUI();
+            renderAdvancedNumericEditor();
+            advancedConfigStatus('✓ Đã tự động lưu cấu hình '+ADVANCED_NUMERIC_LABELS[setting]+'.'+snappedNotice);
+        }
+        function syncNumericConfigToUI() {
+            for(const [setting,id] of Object.entries(NUMERIC_RANGE_IDS)){
+                const range=document.getElementById(id);
+                const c=NUMERIC_SETTINGS[setting];
+                range.min=String(c.min);
+                range.max=String(c.max);
+                range.step=String(c.step);
+            }
+            document.querySelectorAll('[data-numeric-limits]').forEach(el=>{
+                const key=el.dataset.numericLimits, c=NUMERIC_SETTINGS[key];
+                if(c) el.textContent=formatNumeric(key,c.min)+'–'+formatNumeric(key,c.max);
+            });
+            // Nếu giới hạn mới không chứa giá trị hiện tại, thu về mức hợp lệ.
+            currentFontSize=normalizeNumeric('fontSize',currentFontSize);
+            readerMargin=normalizeNumeric('readerMargin',readerMargin);
+            readerOpacity=normalizeNumeric('opacity',readerOpacity);
+            readerLineHeight=normalizeNumeric('lineHeight',readerLineHeight);
+            tocFontSize=normalizeNumeric('tocFontSize',tocFontSize);
+            tocItemGap=normalizeNumeric('tocItemGap',tocItemGap);
+            tocLineHeight=normalizeNumeric('tocLineHeight',tocLineHeight);
+            settingsHeight=normalizeNumeric('settingsHeight',settingsHeight);
+            applyTocSettings();
+            setSettingsHeight(settingsHeight);
+            applyReaderSettings();
+            for(const id of Object.values(NUMERIC_RANGE_IDS)) {
+                const range=document.getElementById(id);
+                range.__updateStepButtons?.();
+            }
+        }
+        let pendingAdvancedReset='';
+        function requestAdvancedReset(all=false) {
+            pendingAdvancedReset=all?'all':document.getElementById('advanced-numeric-select').value;
+            const box=document.getElementById('advanced-confirm-box');
+            box.hidden=false;
+            document.getElementById('advanced-confirm-label').textContent=all
+                ? 'Khôi phục MIN/MAX/STEP/DEFAULT của cả 8 thông số về cấu hình gốc? Cài đặt đọc kinh và bộ bài tụng được giữ lại.'
+                : 'Khôi phục bốn giới hạn gốc của '+ADVANCED_NUMERIC_LABELS[pendingAdvancedReset]+'? Giá trị đang dùng sẽ được đưa về phạm vi hợp lệ nếu cần.';
+        }
+        function cancelAdvancedReset() {
+            pendingAdvancedReset='';
+            const box=document.getElementById('advanced-confirm-box');
+            if(box) box.hidden=true;
+        }
+        function confirmAdvancedReset() {
+            if(!pendingAdvancedReset) return;
+            const keys=pendingAdvancedReset==='all'
+                ? Object.keys(FACTORY_NUMERIC_SETTINGS) : [pendingAdvancedReset];
+            const snapshot=Object.fromEntries(keys.map(k=>[k,{...NUMERIC_SETTINGS[k]}]));
+            for(const key of keys) Object.assign(NUMERIC_SETTINGS[key],FACTORY_NUMERIC_SETTINGS[key]);
+            if(!saveNumericOverrides()){
+                for(const key of keys) Object.assign(NUMERIC_SETTINGS[key],snapshot[key]);
+                cancelAdvancedReset();
+                advancedConfigStatus('Không thể lưu cấu hình khôi phục.',true);
+                return;
+            }
+            cancelAdvancedReset();
+            syncNumericConfigToUI();
+            renderAdvancedNumericEditor();
+            advancedConfigStatus('✓ Đã khôi phục cấu hình gốc. Bài kinh và bộ bài tụng không bị xóa.');
+        }
+        function initializeNumericDefaults() {
+            currentFontSize=normalizeNumeric('fontSize',NUMERIC_SETTINGS.fontSize.default);
+            readerMargin=normalizeNumeric('readerMargin',NUMERIC_SETTINGS.readerMargin.default);
+            readerOpacity=normalizeNumeric('opacity',NUMERIC_SETTINGS.opacity.default);
+            readerLineHeight=normalizeNumeric('lineHeight',NUMERIC_SETTINGS.lineHeight.default);
+            tocFontSize=normalizeNumeric('tocFontSize',NUMERIC_SETTINGS.tocFontSize.default);
+            tocItemGap=normalizeNumeric('tocItemGap',NUMERIC_SETTINGS.tocItemGap.default);
+            tocLineHeight=normalizeNumeric('tocLineHeight',NUMERIC_SETTINGS.tocLineHeight.default);
+            settingsHeight=normalizeNumeric('settingsHeight',NUMERIC_SETTINGS.settingsHeight.default);
         }
 
         let selectedOrder = [];
@@ -1166,6 +1399,7 @@
                 minus.addEventListener('click', () => adjust(-1));
                 plus.addEventListener('click', () => adjust(1));
                 range.addEventListener('input', updateStepButtons);
+                range.__updateStepButtons=updateStepButtons;
                 updateStepButtons();
             }
         }
@@ -1296,9 +1530,12 @@
                 if ('serviceWorker' in navigator && !location.pathname.includes('/modules/')) {
                     navigator.serviceWorker.register('./sw.js').catch(e => console.warn('SW:',e));
                 }
+                loadNumericOverrides();
                 initNumericRangeConfig();
                 setupNumericControls();
+                initializeNumericDefaults();
                 loadReaderSettings();
+                populateAdvancedNumericPicker();
                 setupFloatingSettings();
                 refreshProfiles();
                 indexSearchData();
@@ -1493,6 +1730,45 @@
           <input type="range" id="opacity-range" oninput="setReaderOpacity(this.value)">
           <div class="small-note">Giới hạn độ trong suốt <span data-numeric-limits="opacity"></span>%. Giá trị mặc định theo khối cấu hình; dừng cuộn khoảng 2 giây thì nút hiện rõ.</div>
         </div>
+        <!-- Nâng cao: điều chỉnh cấu hình, KHÔNG đụng vào các mục chọn kinh. -->
+        <details class="advanced-config-box" id="advanced-config-details">
+          <summary>⚙ CÀI ĐẶT NÂNG CAO — MIN / MAX / STEP / DEFAULT</summary>
+          <div class="advanced-config-inner">
+            <p class="small-note" style="margin-top:12px">Chỉ dành cho người muốn thay đổi phạm vi và bước chỉnh. Chọn thông số, nhập số và chạm ra ngoài ô để <b>tự lưu</b>. Các nút −/+ và thanh trượt sẽ dùng ngay giới hạn mới.</p>
+            <div class="settings-field">
+              <label for="advanced-numeric-select">Chọn thông số cần cấu hình</label>
+              <select id="advanced-numeric-select" onchange="renderAdvancedNumericEditor()"></select>
+            </div>
+            <div class="advanced-config-grid">
+              <label for="advanced-min">MIN — Nhỏ nhất
+                <input id="advanced-min" type="number" inputmode="decimal" step="any" oninput="previewAdvancedNumericEdit()" onchange="commitAdvancedNumericEdit()">
+              </label>
+              <label for="advanced-max">MAX — Lớn nhất
+                <input id="advanced-max" type="number" inputmode="decimal" step="any" oninput="previewAdvancedNumericEdit()" onchange="commitAdvancedNumericEdit()">
+              </label>
+              <label for="advanced-step">STEP — Bước tăng/giảm
+                <input id="advanced-step" type="number" inputmode="decimal" step="any" oninput="previewAdvancedNumericEdit()" onchange="commitAdvancedNumericEdit()">
+              </label>
+              <label for="advanced-default">DEFAULT — Giá trị mặc định
+                <input id="advanced-default" type="number" inputmode="decimal" step="any" oninput="previewAdvancedNumericEdit()" onchange="commitAdvancedNumericEdit()">
+              </label>
+            </div>
+            <p id="advanced-safe-hint" class="small-note"></p>
+            <div id="advanced-config-status" role="status" aria-live="polite"></div>
+            <div class="advanced-config-actions">
+              <button type="button" onclick="requestAdvancedReset(false)">↺ KHÔI PHỤC MỤC NÀY</button>
+              <button type="button" class="advanced-danger" onclick="requestAdvancedReset(true)">↺ KHÔI PHỤC TẤT CẢ</button>
+            </div>
+            <div id="advanced-confirm-box" hidden>
+              <p id="advanced-confirm-label"></p>
+              <div class="advanced-config-actions">
+                <button type="button" onclick="cancelAdvancedReset()">HỦY</button>
+                <button type="button" class="advanced-confirm-yes" onclick="confirmAdvancedReset()">XÁC NHẬN</button>
+              </div>
+            </div>
+            <p class="small-note" style="margin-top:12px">Lưu ý: DEFAULT chỉ áp dụng khi chưa có giá trị sử dụng đã lưu. Khôi phục ở đây chỉ đặt lại MIN/MAX/STEP/DEFAULT, không xóa dữ liệu kinh.</p>
+          </div>
+        </details>
         <button id="help-open" type="button" onclick="openHelp()">📖 HƯỚNG DẪN SỬ DỤNG</button>
       </div>
     </section>
@@ -1518,7 +1794,10 @@
           <p>IN để in hoặc lưu PDF nếu Android hỗ trợ. CHIA SẺ để sao chép liên kết hoặc hiển thị mã QR. HOME và LÊN ĐẦU đưa về đầu phần đọc; XUỐNG CUỐI đưa đến cuối phần đọc.</p>
           <h4>7. Sử dụng ngoại tuyến và cập nhật</h4>
           <p>Khi có Internet, mở ứng dụng để lấy bản nội dung mới từ website nếu đã được phát hành trên GitHub Pages. Sau khi dữ liệu được lưu vào bộ nhớ, bạn có thể đọc khi không có mạng. Nếu chưa thấy thay đổi mới, đóng rồi mở lại ứng dụng lúc có mạng.</p>
-          <h4>8. Lưu ý</h4>
+          <h4>8. Cài đặt nâng cao MIN / MAX / STEP / DEFAULT</h4>
+          <p>Mở CÀI ĐẶT → CÀI ĐẶT NÂNG CAO, chọn một trong 8 thông số. MIN là giá trị nhỏ nhất, MAX là lớn nhất, STEP là mức tăng/giảm khi nhấn −/+, DEFAULT là giá trị mặc định khi chưa có cài đặt. Chỉnh số rồi chạm ra ngoài ô: ứng dụng sẽ kiểm tra và tự lưu nếu hợp lệ. Không có nút LƯU.</p>
+          <p>MIN phải nhỏ hơn MAX, STEP lớn hơn 0, DEFAULT nằm trong MIN–MAX. Nếu DEFAULT không khớp bước STEP, ứng dụng sẽ thông báo khi làm tròn. Nhấn KHÔI PHỤC MỤC NÀY hoặc KHÔI PHỤC TẤT CẢ để lấy lại giới hạn gốc. Việc này không xóa bài kinh hay bộ bài tụng.</p>
+          <h4>9. Lưu ý</h4>
           <p>Các cài đặt và bộ kinh được lưu trên chính thiết bị. Nếu xoá dữ liệu ứng dụng hoặc gỡ APK, thông tin đã lưu có thể mất. Chức năng BỎ CHỌN TẤT CẢ yêu cầu xác nhận ngay trong ứng dụng, không đưa bạn về màn hình bắt đầu.</p>
         </div>
       </section>
