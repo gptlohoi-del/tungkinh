@@ -284,7 +284,9 @@ Bao dung khắp muôn loài. O
 <b>và Mười phương Tăng. O (1 lạy)</b>
 Hoặc:</pre>
 <h3>CHÍ TÂM ĐẢNH LỄ</h3>
-<pre>(sheet nhạc - bản song ngữ Anh Việt trang 138)</pre>
+<pre><b>Namo Sakiya Muni Buddha and all universe Buddhas forever.</b>
+<b>Namo the tenet Buddha has taught and all universe Dharmas forever.</b>
+<b>Namo the Saintly disciples of Buddha and all universe Sangha forever.</b></pre>
 <h3>KHAI KINH</h3>
 <pre>Pháp vi diệu rất sâu vô lượng
 Trăm ngàn muôn kiếp khó tìm cầu
@@ -1022,7 +1024,9 @@ Bao dung khắp muôn loài. O
 <b>và Mười phương Tăng. O (1 lạy)</b>
 Hoặc:</pre>
 <h3>CHÍ TÂM ĐẢNH LỄ</h3>
-<pre>(sheet nhạc - bản song ngữ Anh Việt trang 138)</pre>
+<pre><b>Namo Sakiya Muni Buddha and all universe Buddhas forever.</b>
+<b>Namo the tenet Buddha has taught and all universe Dharmas forever.</b>
+<b>Namo the Saintly disciples of Buddha and all universe Sangha forever.</b></pre>
 <h3>KHAI KINH</h3>
 <pre>Pháp vi diệu rất sâu vô lượng
 Trăm ngàn muôn kiếp khó tìm cầu
@@ -1393,7 +1397,9 @@ Bao dung khắp muôn loài. O
 <b>và Mười phương Tăng. O (1 lạy)</b>
 Hoặc:</pre>
 <h3>CHÍ TÂM ĐẢNH LỄ</h3>
-<pre>(sheet nhạc - bản song ngữ Anh Việt trang 138)</pre>
+<pre><b>Namo Sakiya Muni Buddha and all universe Buddhas forever.</b>
+<b>Namo the tenet Buddha has taught and all universe Dharmas forever.</b>
+<b>Namo the Saintly disciples of Buddha and all universe Sangha forever.</b></pre>
 <h3>KHAI KINH</h3>
 <pre>Pháp vi diệu rất sâu vô lượng
 Trăm ngàn muôn kiếp khó tìm cầu
@@ -2272,7 +2278,9 @@ Bao dung khắp muôn loài. O
 <b>và Mười phương Tăng. O (1 lạy)</b>
 Hoặc:</pre>
 <h3>CHÍ TÂM ĐẢNH LỄ</h3>
-<pre>(sheet nhạc - bản song ngữ Anh Việt trang 138)</pre>
+<pre><b>Namo Sakiya Muni Buddha and all universe Buddhas forever.</b>
+<b>Namo the tenet Buddha has taught and all universe Dharmas forever.</b>
+<b>Namo the Saintly disciples of Buddha and all universe Sangha forever.</b></pre>
 <h3>KHAI KINH</h3>
 <pre>Pháp vi diệu rất sâu vô lượng
 Trăm ngàn muôn kiếp khó tìm cầu
@@ -2974,7 +2982,9 @@ Bao dung khắp muôn loài. O
 <b>và Mười phương Tăng. O (1 lạy)</b>
 Hoặc:</pre>
 <h3>CHÍ TÂM ĐẢNH LỄ</h3>
-<pre>(sheet nhạc - bản song ngữ Anh Việt trang 138)</pre>
+<pre><b>Namo Sakiya Muni Buddha and all universe Buddhas forever.</b>
+<b>Namo the tenet Buddha has taught and all universe Dharmas forever.</b>
+<b>Namo the Saintly disciples of Buddha and all universe Sangha forever.</b></pre>
 <h3>KHAI KINH</h3>
 <pre>Pháp vi diệu rất sâu vô lượng
 Trăm ngàn muôn kiếp khó tìm cầu
@@ -3195,7 +3205,9 @@ Bao dung khắp muôn loài. O
 <b>và Mười phương Tăng. O (1 lạy)</b>
 Hoặc:</pre>
 <h3>CHÍ TÂM ĐẢNH LỄ</h3>
-<pre>(sheet nhạc - bản song ngữ Anh Việt trang 138)</pre>
+<pre><b>Namo Sakiya Muni Buddha and all universe Buddhas forever.</b>
+<b>Namo the tenet Buddha has taught and all universe Dharmas forever.</b>
+<b>Namo the Saintly disciples of Buddha and all universe Sangha forever.</b></pre>
 <h3>KHAI KINH</h3>
 <pre>Pháp vi diệu rất sâu vô lượng
 Trăm ngàn muôn kiếp khó tìm cầu
