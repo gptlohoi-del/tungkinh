@@ -9,7 +9,7 @@ on:
       - '.github/workflows/build-apk.yml'
 
 permissions:
-  contents: write # Tạo/cập nhật bản APK ở GitHub Releases.
+  contents: write # Quyền tạo/cập nhật bản APK ở GitHub Releases.
 
 jobs:
   apk:
@@ -17,24 +17,34 @@ jobs:
     steps:
       - name: Lấy mã nguồn
         uses: actions/checkout@v4
+
       - name: Java 17
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
+
+      # V3 có thể lỗi vì gọi gói Android SDK 'tools' đã bị loại bỏ.
       - name: Android SDK
-        uses: android-actions/setup-android@v3
+        uses: android-actions/setup-android@v4
+        with:
+          packages: 'platform-tools'
+          log-accepted-android-sdk-licenses: 'false'
+
       - name: Android API 35
         run: sdkmanager --install "platforms;android-35" "build-tools;35.0.0"
+
       - name: Gradle 8.11.1
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.11.1'
+
       - name: Tạo APK debug đã ký tự động
         env:
           OVERRIDE_PAGES_URL: ${{ vars.PAGES_URL }}
         shell: bash
         run: |
+          set -euo pipefail
           if [[ -n "$OVERRIDE_PAGES_URL" ]]; then
             SITE_URL="$OVERRIDE_PAGES_URL"
           else
@@ -50,24 +60,71 @@ jobs:
           fi
           echo "Địa chỉ nội dung OTA: $SITE_URL"
           gradle -p android --no-daemon :app:assembleDebug "-PsiteUrl=$SITE_URL"
-          cp android/app/build/outputs/apk/debug/app-debug.apk KINH-TUNG.apk
+
+      - name: Đặt tên APK tự động theo tên ứng dụng và phiên bản
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import os
+          import re
+          import shutil
+          import unicodedata
+          import xml.etree.ElementTree as ET
+          from pathlib import Path
+
+          gradle_text = Path('android/app/build.gradle').read_text(encoding='utf-8')
+          match = re.search(r'(?m)^\s*versionName\s+[\'\"]([^\'\"]+)[\'\"]', gradle_text)
+          if not match:
+              raise SystemExit('LỖI: Không tìm thấy versionName trong android/app/build.gradle')
+          version = match.group(1).strip()
+          if not re.fullmatch(r'[0-9A-Za-z][0-9A-Za-z._-]*', version):
+              raise SystemExit(f'LỖI: versionName không phù hợp để đặt tên tệp: {version!r}')
+
+          root = ET.parse('android/app/src/main/res/values/strings.xml').getroot()
+          app_name = next((s.text or '' for s in root.findall('string')
+                           if s.get('name') == 'app_name'), '').strip()
+          if not app_name:
+              raise SystemExit('LỖI: Không tìm thấy app_name trong strings.xml')
+          ascii_name = unicodedata.normalize('NFKD', app_name.replace('Đ', 'D').replace('đ', 'd'))
+          ascii_name = ascii_name.encode('ascii', 'ignore').decode('ascii')
+          safe_name = re.sub(r'[^A-Za-z0-9]+', '-', ascii_name).strip('-').upper()
+          if not safe_name:
+              raise SystemExit('LỖI: Tên ứng dụng không thể chuyển thành tên tệp APK')
+
+          filename = f'{safe_name}-v{version}-debug.apk'
+          source = Path('android/app/build/outputs/apk/debug/app-debug.apk')
+          if not source.is_file():
+              raise SystemExit(f'LỖI: Không thấy APK sau khi build: {source}')
+
+          output_dir = Path('dist')
+          output_dir.mkdir(parents=True, exist_ok=True)
+          output = output_dir / filename
+          shutil.copy2(source, output)
+          print(f'Đã tạo file: {output} ({output.stat().st_size:,} bytes)')
+          with Path(os.environ['GITHUB_ENV']).open('a', encoding='utf-8') as env:
+              env.write(f'APK_PATH={output.as_posix()}\n')
+          PY
+
       - name: Lưu APK trong GitHub Actions
         uses: actions/upload-artifact@v4
         with:
           name: KINH-TUNG-APK-debug
-          path: KINH-TUNG.apk
+          path: dist/*.apk
           retention-days: 30
           if-no-files-found: error
+
       - name: Đăng APK vào GitHub Releases để tải trực tiếp
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
+          set -euo pipefail
           TAG="kinh-tung-apk"
           if gh release view "$TAG" >/dev/null 2>&1; then
-            gh release upload "$TAG" KINH-TUNG.apk --clobber
+            gh release upload "$TAG" "$APK_PATH" --clobber
           else
-            gh release create "$TAG" KINH-TUNG.apk \
+            gh release create "$TAG" "$APK_PATH" \
               --title "KINH TỤNG — APK (bản debug)" \
               --notes "APK tự động ký DEBUG, không cần Release Key. Nội dung cập nhật OTA từ GitHub Pages. Dùng thử/cài cá nhân, không phải bản phát hành bảo mật cho Play Store." \
               --prerelease --target "$GITHUB_SHA"
