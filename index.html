@@ -344,15 +344,128 @@
         border-radius:20px;box-shadow:0 2px 12px #0003;font-weight:700;pointer-events:none; }
     #reader-toast[hidden] { display:none !important; }
     /* Chiều cao được điều khiển trong JS, không ghi đè ở điểm ngắt màn hình. */
-    .numeric-adjust-row { display:flex;gap:8px;align-items:center;margin-top:7px;flex-wrap:wrap; }
-    .numeric-step { min-width:46px;min-height:44px;border:1px solid #e9a742;border-radius:10px;
-        background:#fff;font-size:24px;line-height:1;color:#78350f;font-weight:700;touch-action:manipulation; }
-    .numeric-slider-toggle { flex:1;min-height:44px;padding:8px;border:1px solid #d6b77b;
-        border-radius:10px;background:#fff9e8;color:#92400e;font-weight:700;font-size:13px; }
-    .numeric-slider-toggle[aria-expanded=true] {background:#fde68a;}
-    .numeric-slider-wrap { margin-top:6px;padding:8px 10px;border:1px dashed #f3cf83;border-radius:10px; }
-    .numeric-slider-wrap[hidden] {display:none!important;}
-    .numeric-slider-wrap input[type=range] { touch-action:pan-x; }
+    /* ==============================================================
+       THANH TRƯỢT NHỎ GỌN THEO MẪU TỤNG KINH 3
+       Nút - / thanh trượt ngắn / nút + / giá trị, luôn nhìn thấy.
+       Vuốt dọc ưu tiên cuộn bảng cài đặt, không phải chỉnh thanh.
+       ============================================================== */
+    .settings-field.numeric-setting-field {
+        margin: 10px 0;
+        padding: 10px 11px;
+        border: 1px solid #f3dbad;
+        border-radius: 11px;
+        background: #fffaf0;
+    }
+    .settings-field.numeric-setting-field .field-header {
+        margin-bottom: 6px;
+        line-height: 1.35;
+    }
+    .numeric-adjust-row {
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+        gap: 7px;
+        width: 100%;
+        min-width: 0;
+    }
+    .numeric-step {
+        flex: 0 0 36px;
+        width: 36px;
+        height: 36px;
+        min-width: 36px;
+        min-height: 36px;
+        padding: 0;
+        border: 1px solid #ddb87c;
+        border-radius: 7px;
+        background: #fff;
+        color: #78350f;
+        font-size: 22px;
+        font-weight: 700;
+        line-height: 1;
+        display: inline-flex;
+        justify-content: center;
+        align-items: center;
+        touch-action: manipulation;
+        user-select: none;
+        -webkit-tap-highlight-color: transparent;
+    }
+    .numeric-step:active { background: #fde68a; }
+    .numeric-step:disabled { opacity: .4; cursor: not-allowed; }
+    .numeric-slider-inline {
+        position: relative;
+        flex: 1 1 100px;
+        min-width: 70px;
+        max-width: 175px;
+        display: flex;
+        align-items: center;
+        height: 36px;
+        padding: 0 2px;
+    }
+    .settings-field .numeric-slider-inline input[type=range] {
+        appearance: none;
+        -webkit-appearance: none;
+        box-sizing: border-box;
+        display: block;
+        width: 100%;
+        height: 26px;
+        min-height: 26px;
+        margin: 0;
+        padding: 0;
+        background: transparent;
+        border: 0;
+        accent-color: #b45309;
+        cursor: ew-resize;
+        touch-action: pan-y; /* Vuốt dọc để cuộn; kéo ngang mới chỉnh. */
+    }
+    /* Lớp nhận kéo ngang: bỏ qua chạm đơn và vuốt dọc để tránh nhảy số. */
+    .numeric-slider-gesture {
+        position: absolute;
+        inset: 0;
+        z-index: 1;
+        background: transparent;
+        touch-action: pan-y;
+        cursor: ew-resize;
+    }
+    .numeric-slider-inline input[type=range]::-webkit-slider-runnable-track {
+        height: 5px;
+        border-radius: 99px;
+        background: #dfc8a3;
+    }
+    .numeric-slider-inline input[type=range]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        width: 18px;
+        height: 18px;
+        margin-top: -6.5px;
+        border: 2px solid #fff;
+        border-radius: 50%;
+        background: #b45309;
+        box-shadow: 0 1px 4px #451a0340;
+    }
+    .numeric-slider-inline input[type=range]::-moz-range-track {
+        height: 5px;
+        border-radius: 99px;
+        background: #dfc8a3;
+    }
+    .numeric-slider-inline input[type=range]::-moz-range-thumb {
+        width: 15px;
+        height: 15px;
+        border: 2px solid #fff;
+        border-radius: 50%;
+        background: #b45309;
+    }
+    .numeric-adjust-row .settings-value {
+        flex: 0 0 auto;
+        min-width: 47px;
+        text-align: right;
+        font-size: 13px;
+        font-weight: 750;
+        font-variant-numeric: tabular-nums;
+    }
+    @media (max-width: 350px) {
+        .numeric-adjust-row { gap: 5px; }
+        .numeric-step { flex-basis: 34px; width: 34px; min-width: 34px; }
+        .settings-field.numeric-setting-field { padding: 8px; }
+    }
     #clear-confirm-modal {position:fixed;inset:0;z-index:350;background:#0007;
         display:flex;align-items:center;justify-content:center;padding:20px;}
     #clear-confirm-modal[hidden] {display:none!important;}
@@ -967,40 +1080,96 @@
             document.getElementById('settings-height-value').textContent=formatNumeric('settingsHeight',settingsHeight)+'%';
             saveReaderSettings();
         }
+        // Cả 8 thông số dùng chung thanh trượt ngắn, nút +/- và giá trị bên phải.
+        // Mỗi lần bấm lấy STEP từ NUMERIC_SETTINGS (không hard-code trong HTML).
         function setupNumericControls() {
-            document.querySelectorAll('#settings-sheet .settings-field input[type="range"]').forEach(range=>{
-                const step=Number(range.step)||1;
-                const row=document.createElement('div');row.className='numeric-adjust-row';
-                const minus=document.createElement('button');minus.type='button';minus.className='numeric-step';
-                minus.textContent='−';minus.setAttribute('aria-label','Giảm '+(range.closest('.settings-field')?.querySelector('label')?.textContent||''));
-                const plus=document.createElement('button');plus.type='button';plus.className='numeric-step';
-                plus.textContent='+';plus.setAttribute('aria-label','Tăng '+(range.closest('.settings-field')?.querySelector('label')?.textContent||''));
-                const toggle=document.createElement('button');toggle.type='button';toggle.className='numeric-slider-toggle';
-                toggle.textContent='DÙNG THANH TRƯỢT';toggle.setAttribute('aria-expanded','false');
-                const wrap=document.createElement('div');wrap.className='numeric-slider-wrap';wrap.hidden=true;
-                range.replaceWith(row);wrap.appendChild(range);
-                row.append(minus,toggle,plus);
-                row.after(wrap);
-                const adjust=(direction)=>{
-                    const next=Number((Number(range.value)+direction*step).toFixed(3));
-                    range.value=String(Math.max(Number(range.min),Math.min(Number(range.max),next)));
-                    range.dispatchEvent(new Event('input',{bubbles:true}));
+            for (const [setting, id] of Object.entries(NUMERIC_RANGE_IDS)) {
+                const range = document.getElementById(id);
+                if (!range) continue;
+                const field = range.closest('.settings-field');
+                if (!field || field.classList.contains('numeric-setting-field')) continue;
+                field.classList.add('numeric-setting-field');
+
+                const label = field.querySelector('label[for="' + id + '"]');
+                const text = label ? label.textContent.trim() : setting;
+                const value = field.querySelector('.field-header .settings-value');
+                const row = document.createElement('div');
+                row.className = 'numeric-adjust-row';
+                const track = document.createElement('div');
+                track.className = 'numeric-slider-inline';
+                const minus = document.createElement('button');
+                minus.type = 'button';
+                minus.className = 'numeric-step';
+                minus.textContent = '−';
+                minus.setAttribute('aria-label', 'Giảm ' + text);
+                const plus = document.createElement('button');
+                plus.type = 'button';
+                plus.className = 'numeric-step';
+                plus.textContent = '+';
+                plus.setAttribute('aria-label', 'Tăng ' + text);
+
+                range.replaceWith(row);
+                track.appendChild(range);
+                const gesture = document.createElement('span');
+                gesture.className = 'numeric-slider-gesture';
+                gesture.setAttribute('aria-hidden', 'true');
+                gesture.title = 'Kéo ngang để điều chỉnh, vuốt dọc để cuộn';
+                track.appendChild(gesture);
+                row.append(minus, track, plus);
+                if (value) row.appendChild(value);
+
+                const updateStepButtons = () => {
+                    const cfg = NUMERIC_SETTINGS[setting];
+                    const current = Number(range.value);
+                    minus.disabled = current <= cfg.min + 1e-8;
+                    plus.disabled = current >= cfg.max - 1e-8;
                 };
-                minus.addEventListener('click',()=>adjust(-1));
-                plus.addEventListener('click',()=>adjust(1));
-                toggle.addEventListener('click',()=>{
-                    wrap.hidden=!wrap.hidden;
-                    toggle.setAttribute('aria-expanded',String(!wrap.hidden));
-                    toggle.textContent=wrap.hidden?'DÙNG THANH TRƯỢT':'ẨN THANH TRƯỢT';
+                const adjust = (direction) => {
+                    const cfg = NUMERIC_SETTINGS[setting];
+                    const next = normalizeNumeric(setting, Number(range.value) + direction * cfg.step);
+                    if (next === Number(range.value)) return;
+                    range.value = String(next);
+                    range.dispatchEvent(new Event('input', { bubbles: true }));
+                };
+                // Không thay đổi giá trị bằng một cú chạm lên thanh trượt.
+                // Phải kéo ngang rõ ràng (>7px) để kích hoạt điều chỉnh.
+                // touch-action:pan-y cho phép cuộn dọc từ ngay trên thanh.
+                let sliderDrag = null;
+                const setByPosition = (x) => {
+                    const cfg = NUMERIC_SETTINGS[setting];
+                    const rect = track.getBoundingClientRect();
+                    if (!rect.width) return;
+                    const fraction = Math.max(0, Math.min(1, (x - rect.left) / rect.width));
+                    const next = normalizeNumeric(setting, cfg.min + fraction * (cfg.max - cfg.min));
+                    if (next !== Number(range.value)) {
+                        range.value = String(next);
+                        range.dispatchEvent(new Event('input', { bubbles: true }));
+                    }
+                };
+                gesture.addEventListener('pointerdown', (event) => {
+                    if (event.button !== undefined && event.button !== 0) return;
+                    sliderDrag = { id: event.pointerId, x: event.clientX, y: event.clientY, active: false };
+                    // Kéo chuột cũng tiếp tục nhận sự kiện khi ra ngoài thanh trượt.
+                    if (event.pointerType === 'mouse') gesture.setPointerCapture(event.pointerId);
                 });
-            });
+                gesture.addEventListener('pointermove', (event) => {
+                    if (!sliderDrag || sliderDrag.id !== event.pointerId) return;
+                    const dx = Math.abs(event.clientX - sliderDrag.x);
+                    const dy = Math.abs(event.clientY - sliderDrag.y);
+                    if (!sliderDrag.active && dx > 7 && dx > dy * 1.25) sliderDrag.active = true;
+                    if (sliderDrag.active) setByPosition(event.clientX);
+                });
+                const endDrag = () => { sliderDrag = null; };
+                gesture.addEventListener('pointerup', endDrag);
+                gesture.addEventListener('pointercancel', endDrag);
+
+                minus.addEventListener('click', () => adjust(-1));
+                plus.addEventListener('click', () => adjust(1));
+                range.addEventListener('input', updateStepButtons);
+                updateStepButtons();
+            }
         }
-        function resetNumericSliders() {
-            document.querySelectorAll('.numeric-slider-wrap').forEach(w=>w.hidden=true);
-            document.querySelectorAll('.numeric-slider-toggle').forEach(b=>{
-                b.textContent='DÙNG THANH TRƯỢT';b.setAttribute('aria-expanded','false');
-            });
-        }
+
         function loadReaderSettings() {
             document.getElementById('font-weight-select').value='600'; // mặc định đậm vừa
             try {
@@ -1039,7 +1208,6 @@
             document.getElementById('settings-backdrop').hidden=true;
             document.getElementById('floating-settings').hidden=false;
             document.getElementById('shareMenu').classList.add('hidden');
-            resetNumericSliders();
             refreshFloatOpacity();
         }
         function openIndex() {
@@ -1342,7 +1510,7 @@
           <h4>3. Mở bảng điều khiển</h4>
           <p>Chạm nút bánh răng để mở cửa sổ CÀI ĐẶT ở phía dưới. Chiều cao cửa sổ điều chỉnh <span data-numeric-limits="settingsHeight"></span>% và được lưu cho lần sau; bạn vẫn nhìn thấy chữ kinh phía trên. Có thể kéo nút bánh răng đến vị trí thuận tay.</p>
           <h4>4. Điều chỉnh chữ</h4>
-          <p>Trong CÀI ĐẶT, đổi kích cỡ, phông chữ, độ đậm, khoảng cách dòng và lề trái/phải. Mọi điều chỉnh được xem trước ngay trên nội dung kinh và tự lưu. Dùng hai nút −/+ để chỉnh số; thanh trượt chỉ xuất hiện khi nhấn DÙNG THANH TRƯỢT. Nút THOÁT hoặc chạm ngoài cửa sổ đều lưu và đóng.</p>
+          <p>Trong CÀI ĐẶT, đổi kích cỡ, phông chữ, độ đậm, khoảng cách dòng và lề trái/phải. Mọi điều chỉnh được xem trước ngay trên nội dung kinh và tự lưu. Mỗi thông số số có hai nút −/+ và một thanh trượt ngắn ở giữa, Bạn có thể bấm từng bước hoặc kéo ngang núm trượt. Vuốt dọc cửa sổ để xem tiếp cài đặt. Nút THOÁT hoặc chạm ngoài cửa sổ đều lưu và đóng.</p>
           <h4>5. Tìm kiếm và chọn nhanh</h4>
           <p>Mở MỤC LỤC rồi nhập tên hoặc cụm từ xuất hiện trong nội dung kinh. Các kết quả phù hợp hiện ngay trong danh sách và có ô chọn bên cạnh. Khi tìm xong, nhấn ĐỌC BÀI ĐÃ CHỌN.</p>
           <p>Trong CÀI ĐẶT → MỤC LỤC có các nút −/+ riêng để chỉnh cỡ chữ (<span data-numeric-limits="tocFontSize"></span>px), khoảng cách giữa các mục và giãn dòng của tên bài dài. Tên dài được căn đều hai bên, dòng cuối căn trái cho dễ đọc.</p>
