@@ -16,12 +16,22 @@
             --body-text: #451a03; 
             --pre-font-size: 1.4375rem;
             --reader-font: Arial, sans-serif;
-            --reader-weight: 500; 
+            --reader-weight: 600;
+            --reader-side-margin: 12px;
+            --reader-line-height: 1.7; 
         }
 
         #pdf-content {
             font-family: var(--reader-font) !important;
             color: var(--body-text);
+            padding-left: var(--reader-side-margin);
+            padding-right: var(--reader-side-margin);
+            box-sizing: border-box;
+        }
+        #pdf-content p, #pdf-content blockquote, #pdf-content li {
+            font-size: var(--pre-font-size);
+            line-height: var(--reader-line-height);
+            font-weight: var(--reader-weight);
         }
 
         #pdf-content h1, #pdf-content h2, #pdf-content h3, #pdf-content h4, #pdf-content h5 {
@@ -34,7 +44,7 @@
         }
 
         #pdf-content h1 { 
-            font-size: 2.2rem !important; 
+            font-size: calc(var(--pre-font-size) + 14px) !important; 
             text-align: center; 
             border-bottom: 3px solid var(--accent-color);
             padding-bottom: 15px;
@@ -42,19 +52,19 @@
         }
 
         #pdf-content h2 { 
-            font-size: 2rem !important; 
+            font-size: calc(var(--pre-font-size) + 9px) !important; 
             border-bottom: 1px solid var(--border-color);
             padding-bottom: 8px;
         }
         
         #pdf-content h3 { 
-            font-size: 1.5rem !important; 
+            font-size: calc(var(--pre-font-size) + 5px) !important; 
             border-bottom: 1px solid var(--border-color);
             padding-bottom: 8px;
         }
         
         #pdf-content h4 { 
-            font-size: 1.2rem !important; 
+            font-size: calc(var(--pre-font-size) + 2px) !important; 
             border-bottom: 1px solid var(--border-color);
             padding-bottom: 8px;
         }
@@ -66,7 +76,7 @@
             border-left: 4px solid var(--accent-color) !important;
             font-family: var(--reader-font) !important;
             font-size: var(--pre-font-size) !important;
-            line-height: 1.7 !important;
+            line-height: var(--reader-line-height) !important;
             font-weight: var(--reader-weight) !important;
             white-space: pre-wrap !important;
             word-wrap: break-word !important;
@@ -165,7 +175,12 @@
             .no-print, header, aside, .mobile-only-btn, footer, .fixed, #qrModal, #shareMenu {
                 display: none !important;
             }
-            body { background: white !important; }
+            body { background: white !important; overflow: visible !important; }
+            .reading-layout { display:block !important; height:auto !important; overflow:visible !important; }
+            .reading-main { overflow:visible !important; height:auto !important; }
+            .reading-page { padding:0 !important; }
+            #pdf-content { padding:0 !important; }
+            #floating-settings, #settings-sheet, #help-modal, #sidebar-backdrop { display:none !important; }
             main {
                 padding: 0 !important;
                 margin: 0 !important;
@@ -187,65 +202,114 @@
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
-<body class="bg-amber-50 flex flex-col min-h-screen font-sans">
+<body class="bg-amber-50 flex flex-col font-sans">
 <style>
-    .reader-toolbar { display:flex; align-items:center; justify-content:space-between; gap:3px; width:100%; min-width:0; }
-    .reader-controls { display:flex; align-items:center; gap:3px; flex-wrap:nowrap; min-width:0; }
-    .reader-controls button { min-width:30px; height:34px; padding:0 5px; border-radius:7px; border:1px solid #fcd34d; background:#fff; color:#78350f; font-weight:700; }
-    .reader-controls select { min-width:0; max-width:90px; height:34px; border-radius:7px; padding:0 2px; background:#fff; color:#78350f; font-size:13px; font-weight:600; }
-    #font-weight-select { max-width:76px; }
-    #font-size-display { min-width:27px; text-align:center; font-weight:700; font-size:13px; color:#fff; }
+    /* Không để thanh công cụ chiếm diện tích trang đọc. */
+    html, body { width:100%; height:100%; height:100dvh; overflow:hidden; }
+    body { margin:0; min-height:0; }
+    .reading-layout { min-height:0; height:100%; overflow:hidden; }
+    .reading-main { min-height:0; height:100%; overflow-y:auto; overscroll-behavior:contain; }
+    .reading-page { padding:12px 0 80px !important; box-shadow:none !important; border:0 !important; }
     #pdf-content pre { overflow-wrap:anywhere; }
-    #pdf-content h2, #pdf-content h3, #pdf-content h4 { cursor:pointer; }
     .item-title { font-size:17px !important; line-height:1.5; font-weight:600; }
     aside label { min-height:48px; }
 
-    /* Khung tìm kiếm: rộng gần hết màn hình điện thoại, không tràn mép. */
-    #searchWrapper { width: min(520px, calc(100vw - 24px)); align-items: stretch; }
-    #searchInput, #searchResults { box-sizing: border-box; width: 100%; min-width: 0; }
-    #searchResults { max-height: min(45vh, 360px); overflow-y: auto; }
-    /* Tên kết quả dài tự xuống dòng, không bị cắt bởi dấu ba chấm. */
-    .search-result-title { flex: 1 1 0%; min-width: 0; white-space: normal; overflow-wrap: anywhere; line-height: 1.5; }
-    .search-result-type { flex: 0 0 auto; white-space: nowrap; }
-    /* Trên điện thoại xoay ngang, dùng cùng bố cục một cột như khi cầm dọc.
-       Không áp dụng cho màn hình máy tính hoặc máy tính bảng lớn. */
-    @media screen and (orientation: landscape) and (max-height: 650px) and (max-width: 1200px) and (pointer: coarse) {
-        .reading-layout { flex-direction: column !important; }
-        .reading-main { padding: 0.25rem !important; }
-        .reading-page { padding: 0.25rem !important; }
-        .reading-sidebar { width: 100% !important; }
-        .mobile-only-btn { display: block !important; }
-    }
-    @media (max-width:370px) { .reader-controls { gap:2px; } .reader-controls select { max-width:75px; font-size:12px; } #font-weight-select { max-width:65px; } }
-</style>
-<header class="no-print bg-amber-800 text-amber-50 p-1 sticky top-0 z-50 shadow-lg">
-  <div class="reader-toolbar">
-    <button aria-label="HOME, về đầu trang" onclick="window.scrollTo({top:0,behavior:'smooth'})" style="display:flex;align-items:center;gap:3px;font-weight:700;font-size:12px;flex-shrink:0;padding:6px 2px">⌂ HOME</button>
-    <div class="reader-controls" aria-label="Tùy chỉnh chữ đọc kinh">
-      <button aria-label="Giảm cỡ chữ" onclick="changeFontSize(-0.1)">A−</button>
-      <span id="font-size-display" aria-label="Cỡ chữ">23</span>
-      <button aria-label="Tăng cỡ chữ" onclick="changeFontSize(0.1)">A+</button>
-      <select id="font-family-select" aria-label="Chọn phông chữ" onchange="setReaderFont(this.value)">
-        <option value="arial">Arial</option>
-        <option value="noto">Noto Sans</option>
-        <option value="times">Times New Roman</option>
-        <option value="georgia">Georgia</option>
-        <option value="tahoma">Tahoma</option>
-        <option value="verdana">Verdana</option>
-        <option value="trebuchet">Trebuchet MS</option>
-      </select>
-      <select id="font-weight-select" aria-label="Độ đậm chữ" onchange="setReaderWeight(this.value)">
-        <option value="400">Thường</option>
-        <option value="500">Vừa</option>
-        <option value="600">Đậm vừa</option>
-        <option value="700">Đậm</option>
-      </select>
-    </div>
-  </div>
-</header>
+    /* Danh sách bài kinh là ngăn riêng; bình thường chỉ thấy nội dung. */
+    #reading-sidebar { position:fixed !important; right:0; top:0; bottom:0; z-index:220;
+        width:min(430px,100vw) !important; max-width:100vw; height:100dvh;
+        transform:translateX(105%); visibility:hidden; transition:transform .22s ease,visibility .22s;
+        overflow-y:auto; overscroll-behavior:contain; background:white;
+        padding:0 14px 30px !important; }
+    #reading-sidebar.is-open { transform:translateX(0); visibility:visible; }
+    #sidebar-backdrop { position:fixed; inset:0; z-index:210; background:rgba(0,0,0,.35); }
+    #sidebar-backdrop[hidden] { display:none !important; }
+    .sidebar-sticky-header { position:sticky; top:0; z-index:1; background:#fff;
+        display:flex; justify-content:space-between; align-items:center;
+        border-bottom:1px solid #fde68a; padding:12px 0; }
 
+    /* Nút bánh răng nổi: 0% = rõ, 70% = còn 30% độ đục. */
+    #floating-settings { position:fixed; z-index:180; width:52px; height:52px;
+        right:12px; bottom:calc(16px + env(safe-area-inset-bottom,0px));
+        border-radius:50%; background:#a9530a; color:#fff; border:2px solid #fff;
+        box-shadow:0 3px 14px rgba(69,26,3,.22); display:flex; align-items:center;
+        justify-content:center; cursor:grab; touch-action:none; user-select:none;
+        opacity:1; transition:opacity .18s ease; }
+    #floating-settings:focus-visible { outline:3px solid #f59e0b; outline-offset:3px; }
+    #floating-settings[hidden] { display:none !important; }
+
+    /* Bảng điều khiển luôn thấp hơn toàn màn hình để xem trước chữ. */
+    #settings-sheet { position:fixed; z-index:190; bottom:0; left:50%; transform:translateX(-50%);
+        width:min(100%,650px); height:45dvh; min-height:260px;
+        max-height:calc(100dvh - 90px); display:flex; flex-direction:column;
+        background:#fffdf7; border:1px solid #fcd34d; border-radius:20px 20px 0 0;
+        box-shadow:0 -6px 24px rgba(69,26,3,.23); }
+    #settings-sheet[hidden] { display:none !important; }
+    .settings-top { flex:none; display:flex; align-items:center; justify-content:space-between;
+        gap:10px; padding:11px 12px; border-bottom:1px solid #fde68a;
+        background:#fff7e5; border-radius:19px 19px 0 0; position:sticky;top:0;z-index:2; }
+    .settings-top strong { font-size:15px; color:#78350f; }
+    .settings-top-actions { display:flex; gap:8px; }
+    .settings-top-actions button { min-width:64px; min-height:44px; padding:7px 12px;
+        border-radius:10px; font-size:14px; font-weight:750; }
+    #save-settings { background:#15803d; color:white; }
+    #exit-settings { background:#b45309; color:white; }
+    .settings-content { flex:1; min-height:0; padding:10px 12px calc(18px + env(safe-area-inset-bottom,0px));
+        overflow-y:auto; overscroll-behavior:contain; }
+    .settings-heading { font-size:13px; font-weight:800; color:#92400e;
+        margin:14px 0 9px; border-bottom:1px solid #fde68a; padding-bottom:5px; }
+    .tools-grid { display:grid;grid-template-columns:repeat(4,minmax(0,1fr)); gap:7px; }
+    .tools-grid button { display:flex; flex-direction:column; align-items:center; justify-content:center;
+        gap:3px; padding:8px 2px; min-height:65px; background:#fffbeb; border:1px solid #fcd34d;
+        border-radius:12px; color:#78350f; font-size:12px; font-weight:700; }
+    .tools-grid button span:first-child { font-size:22px; line-height:1.15; }
+    .settings-field { display:block; margin:12px 0; }
+    .settings-field>label, .settings-field .field-header { display:flex;justify-content:space-between;
+        gap:10px;align-items:center;font-size:14px;font-weight:700;color:#78350f; }
+    .settings-field input[type=range] { width:100%; accent-color:#b45309; min-height:34px; cursor:pointer; }
+    .settings-field select { width:100%; min-height:44px; border:1px solid #fcd34d;
+        border-radius:10px;padding:8px;background:white;color:#78350f;font-size:16px; }
+    .settings-value { color:#9a3412;white-space:nowrap;font-variant-numeric:tabular-nums; }
+    .small-note { font-size:12px;color:#92400e;line-height:1.5; }
+    #searchWrapper { display:flex; flex-direction:column; gap:6px; margin-top:10px; width:100%; }
+    #searchWrapper.hidden { display:none !important; }
+    #searchInput { width:100%; min-height:46px; border:1px solid #d97706;border-radius:10px;
+        padding:10px; outline-offset:2px; background:#fff; }
+    #searchResults { width:100%; max-height:190px; overflow-y:auto; background:#fff;
+        border:1px solid #fde68a;border-radius:10px; }
+    .search-result-title { flex:1 1 0%;min-width:0;white-space:normal;overflow-wrap:anywhere;line-height:1.5; }
+    .search-result-type { flex:none; white-space:nowrap; }
+    #shareMenu { margin-top:8px; display:flex; gap:8px; flex-wrap:wrap; }
+    #shareMenu.hidden { display:none !important; }
+    #shareMenu button { min-height:44px; border:1px solid #fcd34d;border-radius:10px;
+        background:#fff;padding:8px 12px;color:#78350f;font-weight:700; }
+    #help-open { display:block;width:100%;min-height:48px;background:#fff7ed;
+        border:1px solid #f59e0b;border-radius:12px;color:#92400e;
+        font-weight:800;margin-top:20px;padding:10px;text-align:center; }
+    #help-modal { position:fixed;z-index:300;inset:0;background:rgba(0,0,0,.4);
+        display:flex;justify-content:center;align-items:flex-end; }
+    #help-modal[hidden] { display:none !important; }
+    .help-card { width:min(100%,650px);max-height:85dvh;display:flex;flex-direction:column;
+        border-radius:20px 20px 0 0;background:#fffdf7;color:#451a03; }
+    .help-head { position:sticky;top:0;flex:none;display:flex;justify-content:space-between;
+        align-items:center;padding:14px;border-bottom:1px solid #fde68a;background:#fff7e5;border-radius:20px 20px 0 0; }
+    .help-head button { min-height:44px;min-width:66px;border-radius:9px;background:#b45309;color:white;font-weight:700; }
+    .help-body { overflow-y:auto;padding:16px 18px calc(20px + env(safe-area-inset-bottom,0px));line-height:1.65; }
+    .help-body h4 { font-weight:800;color:#92400e;margin:10px 0 4px; }
+    .help-body p { margin:0 0 9px; }
+    #reader-toast { position:fixed;z-index:320;bottom:calc(12px + env(safe-area-inset-bottom,0px));left:50%;
+        transform:translateX(-50%);background:#14532d;color:#fff;padding:9px 16px;
+        border-radius:20px;box-shadow:0 2px 12px #0003;font-weight:700;pointer-events:none; }
+    #reader-toast[hidden] { display:none !important; }
+    @media (min-width:768px) { #settings-sheet { height: min(48dvh,450px); } }
+    @media (max-height:500px) { #settings-sheet { min-height:200px;height:60dvh;max-height:calc(100dvh - 65px); } }
+    @media print {
+        html,body { width:auto;height:auto !important;overflow:visible !important; }
+        .reading-main,.reading-layout { height:auto !important;overflow:visible !important; }
+        #reading-sidebar { display:none !important; }
+    }
+</style>
     <div class="reading-layout flex flex-col md:flex-row-reverse flex-1 overflow-hidden">
-        <main class="reading-main flex-1 p-1 md:p-12 bg-amber-50 overflow-y-auto" style="overflow-anchor: none;">
+        <main id="reading-main" class="reading-main flex-1 p-1 md:p-12 bg-amber-50 overflow-y-auto" style="overflow-anchor: none;">
             <div class="reading-page max-w-3xl mx-auto bg-white min-h-full shadow-xl p-1 md:p-16 rounded-sm border border-amber-100">
                 <div id="preview-placeholder" class="no-print text-center py-20 text-amber-300">
                     <p class="text-xl font-medium">Chọn nội dung kinh để hiển thị.</p>
@@ -254,7 +318,11 @@
             </div>
         </main>
     
-        <aside class="reading-sidebar no-print w-full md:w-96 bg-white border-r border-amber-100 overflow-y-auto p-4 space-y-6">
+        <aside id="reading-sidebar" aria-label="Chọn bài kinh" class="reading-sidebar no-print w-full md:w-96 bg-white border-r border-amber-100 overflow-y-auto p-4 space-y-6">
+            <div class="sidebar-sticky-header">
+                <strong class="text-amber-900">MỤC LỤC VÀ CHỌN BÀI KINH</strong>
+                <button onclick="closeIndex()" aria-label="Đóng mục lục" class="bg-amber-700 text-white rounded-lg px-4 py-2 font-bold min-h-11">ĐÓNG ✕</button>
+            </div>
             <button onclick="confirmClear()" class="w-full mb-4 py-2.5 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded-xl transition-all active:scale-95 uppercase tracking-tighter shadow-md flex items-center justify-center gap-2">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -282,6 +350,7 @@
             </div>
         </aside>
     </div>
+    <div id="sidebar-backdrop" hidden onclick="closeIndex()" class="no-print" aria-hidden="true"></div>
 
     <script src="./data.js" defer></script>
 
@@ -293,37 +362,24 @@
         }
 
         function toggleSearch() {
-            const wrapper = document.getElementById('searchWrapper');
-            const btn = document.getElementById('searchBtn');
-            const results = document.getElementById('searchResults');
-            
-            if (wrapper.classList.contains('hidden')) {
-                wrapper.classList.remove('hidden');
-                wrapper.classList.add('flex'); 
-                document.getElementById('searchInput').focus();
-                btn.classList.replace('bg-amber-600', 'bg-red-500');
-            } else {
-                wrapper.classList.add('hidden');
-                wrapper.classList.remove('flex');
-                document.getElementById('searchInput').value = "";
-                results.innerHTML = "";
-                results.classList.add('hidden');
-                btn.classList.replace('bg-red-500', 'bg-amber-600');
-            }
-            
-            // Đóng menu share nếu đang mở
+            const wrapper=document.getElementById('searchWrapper');
+            const showing=wrapper.classList.contains('hidden');
+            wrapper.classList.toggle('hidden',!showing);
             document.getElementById('shareMenu').classList.add('hidden');
-        }
-
-        function toggleShareMenu() {
-            const menu = document.getElementById('shareMenu');
-            menu.classList.toggle('hidden');
-            
-            // Đóng khung tìm kiếm nếu đang mở
-            const wrapper = document.getElementById('searchWrapper');
-            if (!wrapper.classList.contains('hidden')) {
-                toggleSearch();
+            if(showing) {
+                setTimeout(()=>{
+                    wrapper.scrollIntoView({block:'nearest',behavior:'smooth'});
+                    document.getElementById('searchInput').focus({preventScroll:true});
+                },30);
+            } else {
+                document.getElementById('searchInput').value='';
+                document.getElementById('searchResults').innerHTML='';
+                document.getElementById('searchResults').classList.add('hidden');
             }
+        }
+        function toggleShareMenu() {
+            document.getElementById('shareMenu').classList.toggle('hidden');
+            document.getElementById('searchWrapper').classList.add('hidden');
         }
 
         let searchTimeout;
@@ -391,8 +447,8 @@
             if(!Array.isArray(data)) return;
             selectedOrder=[...new Set(data.filter(id=>fullData.some(d=>d.id===id&&!isPlaceholder(d))))];
             syncChecklistsUI(); updateUI(); saveToLocalStorage(); updateShareableURL();
-            document.getElementById('modal-list')?.classList.add('hidden');
-            window.scrollTo({top:0,behavior:'smooth'});
+            closeIndex();
+            readerScrollTop();
         }
         function deleteReadingProfile() {
             const name=document.getElementById('saved-profile').value;
@@ -463,28 +519,18 @@
         }
             
         function goToItem(id) {
-            document.getElementById('searchResults').classList.add('hidden');
-            
-            if (!selectedOrder.includes(id)) {
-                toggleSection(id, false);
-            }
-
-            const targetElement = document.getElementById(`item-${id}`);
-            if (targetElement) {
-                targetElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                targetElement.classList.add('blink-target');
-                setTimeout(() => {
-                    targetElement.classList.remove('blink-target');
-                }, 2500);
-            }
-
+            if (!selectedOrder.includes(id)) toggleSection(id, false);
+            closeSettings();
+            closeIndex();
             setTimeout(() => {
-                const previewElement = document.getElementById(`preview-item-${id}`);
-                if (previewElement) {
-                    previewElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                const preview=document.getElementById(`preview-item-${id}`);
+                if (preview) {
+                    preview.scrollIntoView({behavior:'smooth',block:'start'});
+                    preview.classList.add('blink-target');
+                    setTimeout(()=>preview.classList.remove('blink-target'),2400);
                 }
-            }, 300);
-        }   
+            },60);
+        }
 
         function toggleSection(id, preventScrollJump = true) {
             const container = document.getElementById(`item-${id}`);
@@ -507,21 +553,6 @@
             syncChecklistsUI();
             updateUI();
 
-            if (preventScrollJump && container) {
-                const afterTop = container.getBoundingClientRect().top;
-                const diff = afterTop - beforeTop;
-                
-                if (Math.abs(diff) > 1) {
-                    const html = document.documentElement;
-                    html.style.scrollBehavior = 'auto'; 
-                    window.scrollBy(0, diff);
-                    
-                    requestAnimationFrame(() => {
-                        html.style.scrollBehavior = '';
-                    });
-                }
-            }
-
             saveToLocalStorage();
             updateShareableURL();
         }
@@ -532,7 +563,7 @@
             updateUI();
             saveToLocalStorage();
             updateShareableURL();
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+            readerScrollTop();
         }
 
         // Nội dung kinh dùng chung thẻ <pre> cho cả văn xuôi lẫn thơ/kệ.
@@ -653,41 +684,191 @@
             }
         }
 
+        // Những tuỳ chọn này dùng lại khoá cũ để không làm mất cài đặt trước đây.
         const READER_FONTS = {
             arial:'Arial, sans-serif', noto:'"Noto Sans", Arial, sans-serif',
             times:'"Times New Roman", Times, serif', georgia:'Georgia, serif',
             tahoma:'Tahoma, sans-serif', verdana:'Verdana, sans-serif',
             trebuchet:'"Trebuchet MS", Arial, sans-serif'
         };
-        let currentFontSize = 1.4375;
-        function saveReaderSettings() {
-            try { localStorage.setItem('tungKinhReaderSettings', JSON.stringify({
-                size:currentFontSize, font:document.getElementById('font-family-select').value,
-                weight:document.getElementById('font-weight-select').value
-            })); } catch(e) { console.warn('Không lưu được tùy chọn chữ',e); }
+        const SETTINGS_KEY='tungKinhReaderSettings';
+        let currentFontSize=23; // px
+        let readerMargin=12; // lề trái = lề phải
+        let readerOpacity=65; // 0..70 (%)
+        let readerLineHeight=1.7;
+        let isReadingScroll=false;
+        let scrollFadeTimer=null;
+
+        function numberWithin(value,lo,hi,fallback) {
+            const n=Number(value);
+            return Number.isFinite(n)?Math.max(lo,Math.min(hi,n)):fallback;
         }
-        function applyReaderSettings() {
-            document.documentElement.style.setProperty('--pre-font-size',currentFontSize+'rem');
-            document.documentElement.style.setProperty('--reader-font',READER_FONTS[document.getElementById('font-family-select').value] || READER_FONTS.arial);
-            document.documentElement.style.setProperty('--reader-weight',document.getElementById('font-weight-select').value);
-            document.getElementById('font-size-display').textContent=Math.round(currentFontSize*16);
-            saveReaderSettings();
+        function saveReaderSettings() {
+            try {
+                localStorage.setItem(SETTINGS_KEY,JSON.stringify({
+                    size:currentFontSize/16, font:document.getElementById('font-family-select').value,
+                    weight:document.getElementById('font-weight-select').value,
+                    margin:readerMargin, opacity:readerOpacity, lineHeight:readerLineHeight
+                }));
+                return true;
+            } catch(e) { console.warn('Không lưu được cài đặt đọc kinh',e); return false; }
+        }
+        function getReaderAnchor() {
+            const main=document.getElementById('reading-main');
+            const top=main.getBoundingClientRect().top;
+            const blocks=document.querySelectorAll('#pdf-content h1,#pdf-content h2,#pdf-content h3,#pdf-content h4,#pdf-content pre');
+            let target=null;
+            for(const block of blocks) {
+                if(block.getBoundingClientRect().bottom>=top+12) {target=block;break;}
+            }
+            return target?{el:target,top:target.getBoundingClientRect().top}:null;
+        }
+        function refreshFloatOpacity() {
+            const button=document.getElementById('floating-settings');
+            if(button) button.style.opacity=isReadingScroll?String(1-readerOpacity/100):'1';
+        }
+        function applyReaderSettings(anchor=true) {
+            const bookmark=anchor?getReaderAnchor():null;
+            const root=document.documentElement;
+            const font=document.getElementById('font-family-select').value;
+            const weight=document.getElementById('font-weight-select').value;
+            root.style.setProperty('--pre-font-size',currentFontSize+'px');
+            root.style.setProperty('--reader-font',READER_FONTS[font] || READER_FONTS.arial);
+            root.style.setProperty('--reader-weight',weight);
+            root.style.setProperty('--reader-side-margin',readerMargin+'px');
+            root.style.setProperty('--reader-line-height',String(readerLineHeight));
+            document.getElementById('font-size-display').textContent=currentFontSize+'px';
+            document.getElementById('font-size-range').value=String(currentFontSize);
+            document.getElementById('margin-value').textContent=readerMargin+'px';
+            document.getElementById('margin-range').value=String(readerMargin);
+            document.getElementById('opacity-value').textContent=readerOpacity+'%';
+            document.getElementById('opacity-range').value=String(readerOpacity);
+            document.getElementById('line-height-value').textContent=readerLineHeight.toFixed(1);
+            document.getElementById('line-height-range').value=String(readerLineHeight);
+            refreshFloatOpacity();
+            if(bookmark) requestAnimationFrame(()=>{
+                if(bookmark.el.isConnected) {
+                    const delta=bookmark.el.getBoundingClientRect().top-bookmark.top;
+                    document.getElementById('reading-main').scrollTop+=delta;
+                }
+            });
+            saveReaderSettings(); // tự lưu, nút LƯU xác nhận thêm
         }
         function changeFontSize(delta) {
-            currentFontSize=Math.max(1,Math.min(3,Math.round((currentFontSize+delta)*100)/100));
+            currentFontSize=numberWithin(currentFontSize+delta,16,48,23);
             applyReaderSettings();
         }
-        function setReaderFont(font) { if(READER_FONTS[font]) applyReaderSettings(); }
-        function setReaderWeight(weight) { if(['400','500','600','700'].includes(weight)) applyReaderSettings(); }
+        function setFontSize(value) {currentFontSize=Math.round(numberWithin(value,16,48,23));applyReaderSettings();}
+        function setReaderFont(font) {if(READER_FONTS[font]) applyReaderSettings();}
+        function setReaderWeight(weight) {if(['400','500','600','700'].includes(weight)) applyReaderSettings();}
+        function setReaderMargin(value) {readerMargin=Math.round(numberWithin(value,1,100,12));applyReaderSettings();}
+        function setReaderOpacity(value) {readerOpacity=Math.round(numberWithin(value,0,70,65));applyReaderSettings(false);}
+        function setReaderLineHeight(value) {readerLineHeight=Math.round(numberWithin(value,1.3,2.2,1.7)*10)/10;applyReaderSettings();}
         function loadReaderSettings() {
+            document.getElementById('font-weight-select').value='600'; // mặc định đậm vừa
             try {
-                const v=JSON.parse(localStorage.getItem('tungKinhReaderSettings')||'{}');
-                if(Number.isFinite(v.size)) currentFontSize=Math.max(1,Math.min(3,v.size));
+                const v=JSON.parse(localStorage.getItem(SETTINGS_KEY)||'{}');
+                if(v.size!==undefined) currentFontSize=Math.round(numberWithin(Number(v.size)*16,16,48,23));
                 if(READER_FONTS[v.font]) document.getElementById('font-family-select').value=v.font;
                 if(['400','500','600','700'].includes(v.weight)) document.getElementById('font-weight-select').value=v.weight;
-                else document.getElementById('font-weight-select').value='550';
-            } catch(e) {}
-            applyReaderSettings();
+                if(v.margin!==undefined) readerMargin=Math.round(numberWithin(v.margin,1,100,12));
+                if(v.opacity!==undefined) readerOpacity=Math.round(numberWithin(v.opacity,0,70,65));
+                if(v.lineHeight!==undefined) readerLineHeight=Math.round(numberWithin(v.lineHeight,1.3,2.2,1.7)*10)/10;
+            } catch(e) {console.warn('Cài đặt cũ không hợp lệ',e);}
+            applyReaderSettings(false);
+        }
+        function showToast(message) {
+            const el=document.getElementById('reader-toast');
+            el.textContent=message;el.hidden=false;
+            clearTimeout(showToast.timer);
+            showToast.timer=setTimeout(()=>el.hidden=true,1800);
+        }
+        function saveSettingsClicked() {
+            showToast(saveReaderSettings()?'Đã lưu cài đặt':'Không thể lưu cài đặt');
+        }
+        function openSettings() {
+            document.getElementById('settings-sheet').hidden=false;
+            document.getElementById('floating-settings').hidden=true;
+        }
+        function closeSettings() {
+            document.getElementById('settings-sheet').hidden=true;
+            document.getElementById('floating-settings').hidden=false;
+            const wrapper=document.getElementById('searchWrapper');
+            wrapper.classList.add('hidden');
+            document.getElementById('shareMenu').classList.add('hidden');
+            refreshFloatOpacity();
+        }
+        function openIndex() {
+            closeSettings();
+            document.getElementById('reading-sidebar').classList.add('is-open');
+            document.getElementById('sidebar-backdrop').hidden=false;
+        }
+        function closeIndex() {
+            document.getElementById('reading-sidebar').classList.remove('is-open');
+            document.getElementById('sidebar-backdrop').hidden=true;
+        }
+        function readerScrollTop() {
+            closeSettings();closeIndex();
+            document.getElementById('reading-main').scrollTo({top:0,behavior:'smooth'});
+        }
+        function readerScrollBottom() {
+            closeSettings();closeIndex();
+            const main=document.getElementById('reading-main');
+            main.scrollTo({top:main.scrollHeight,behavior:'smooth'});
+        }
+        function openHelp() {document.getElementById('help-modal').hidden=false;}
+        function closeHelp() {document.getElementById('help-modal').hidden=true;}
+
+        function setupFloatingSettings() {
+            const btn=document.getElementById('floating-settings');
+            const stored=(()=>{try{return JSON.parse(localStorage.getItem('tungKinhFloatPosition')||'null');}catch(e){return null;}})();
+            function clamp(x,y) {return {
+                x:Math.min(Math.max(4,x),Math.max(4,window.innerWidth-56)),
+                y:Math.min(Math.max(4,y),Math.max(4,window.innerHeight-60))
+            };}
+            function position(x,y) {
+                const pos=clamp(x,y);
+                btn.style.left=pos.x+'px';btn.style.top=pos.y+'px';
+                btn.style.right='auto';btn.style.bottom='auto';
+                return pos;
+            }
+            if(stored&&Number.isFinite(stored.x)&&Number.isFinite(stored.y)) position(stored.x,stored.y);
+            let drag=null,blockClick=false;
+            btn.addEventListener('pointerdown',e=>{
+                if(e.button!==undefined&&e.button!==0) return;
+                const r=btn.getBoundingClientRect();
+                drag={id:e.pointerId,dx:e.clientX-r.left,dy:e.clientY-r.top,startX:e.clientX,startY:e.clientY,moved:false};
+                btn.setPointerCapture(e.pointerId);
+            });
+            btn.addEventListener('pointermove',e=>{
+                if(!drag||drag.id!==e.pointerId) return;
+                if(Math.hypot(e.clientX-drag.startX,e.clientY-drag.startY)>7) drag.moved=true;
+                if(drag.moved) position(e.clientX-drag.dx,e.clientY-drag.dy);
+            });
+            btn.addEventListener('pointerup',e=>{
+                if(!drag||drag.id!==e.pointerId) return;
+                if(drag.moved) {
+                    blockClick=true;
+                    const r=btn.getBoundingClientRect();
+                    try{localStorage.setItem('tungKinhFloatPosition',JSON.stringify({x:r.left,y:r.top}));}catch(e){}
+                }
+                drag=null;
+            });
+            btn.addEventListener('pointercancel',()=>drag=null);
+            btn.addEventListener('click',()=>{
+                if(blockClick) {blockClick=false;return;}
+                openSettings();
+            });
+            window.addEventListener('resize',()=>{
+                if(btn.style.left) position(parseFloat(btn.style.left),parseFloat(btn.style.top));
+            });
+            const main=document.getElementById('reading-main');
+            main.addEventListener('scroll',()=>{
+                isReadingScroll=true;refreshFloatOpacity();
+                clearTimeout(scrollFadeTimer);
+                scrollFadeTimer=setTimeout(()=>{isReadingScroll=false;refreshFloatOpacity();},1800);
+                try{sessionStorage.setItem('tungKinhScrollY',String(Math.round(main.scrollTop)));}catch(e){}
+            },{passive:true});
         }
 
         window.addEventListener('DOMContentLoaded', () => {
@@ -700,6 +881,7 @@
                     navigator.serviceWorker.register('./sw.js').catch(e => console.warn('SW:',e));
                 }
                 loadReaderSettings();
+                setupFloatingSettings();
                 refreshProfiles();
                 indexSearchData();
                 initChecklists();
@@ -708,21 +890,14 @@
                 updateUI(); 
                 updateShareableURL();
                 const pos=Number(sessionStorage.getItem('tungKinhScrollY')||0);
-                if(pos>0) requestAnimationFrame(()=>window.scrollTo(0,pos));
+                if(pos>0) requestAnimationFrame(()=>{
+                    document.getElementById('reading-main').scrollTop=pos;
+                });
             } catch (error) {
                 console.error("Lỗi khởi tạo:", error);
             }
         });
 
-        let saveScrollPending=false;
-        window.addEventListener('scroll',()=>{
-            if(saveScrollPending) return;
-            saveScrollPending=true;
-            requestAnimationFrame(()=>{
-                try { sessionStorage.setItem('tungKinhScrollY',String(Math.round(window.scrollY))); } catch(e) {}
-                saveScrollPending=false;
-            });
-        },{passive:true});
         document.getElementById('pdf-content').addEventListener('click' , function(e) {
             const header = e.target.closest('h2, h3, h4');
             if (!header) return;
@@ -739,23 +914,9 @@
             }
         });
 
-        function toggleModal(id) {
-            const modal = document.getElementById(id);
-            if (modal) modal.classList.toggle('hidden');
-        }
-
-        function scrollToSection(id) {
-            const element = document.getElementById(id);
-            if(element) {
-                element.scrollIntoView({ behavior: 'smooth' });
-                toggleModal('modal-list');
-            }
-        }
-
         function confirmClear() {
-            if(confirm("Bạn có chắc chắn muốn xoá tất cả lựa chọn không?")) {
-                clearAll();
-                document.getElementById('modal-list')?.classList.add('hidden');
+            if(confirm('Bạn có chắc chắn muốn xoá tất cả lựa chọn không?')) {
+                clearAll();closeIndex();
             }
         }
 
@@ -802,134 +963,123 @@
             document.getElementById('qrModal').classList.add('hidden');
         }
 
-        window.addEventListener('click', function(event) {
-            const modalList = document.getElementById('modal-list');
-            const wrapper = document.getElementById('searchWrapper');
-            const btnSearch = document.getElementById('searchBtn');
-            const shareMenu = document.getElementById('shareMenu');
-            const btnShare = document.getElementById('shareBtn');
-
-            if (event.target == modalList) modalList.classList.add('hidden');
-            
-            // Xử lý đóng Search khi click ngoài
-            if (wrapper && !wrapper.classList.contains('hidden') && btnSearch && !btnSearch.contains(event.target) && !wrapper.contains(event.target)) {
-                toggleSearch(); 
-            }
-            
-            // Xử lý đóng Share Menu khi click ngoài
-            if (shareMenu && !shareMenu.classList.contains('hidden') && btnShare && !btnShare.contains(event.target) && !shareMenu.contains(event.target)) {
-                shareMenu.classList.add('hidden');
-            }
+        window.addEventListener('keydown',function(event) {
+            if(event.key!=='Escape') return;
+            closeHelp();closeIndex();closeSettings();closeQRModal();
         });
 
-        window.addEventListener('keydown', function(event) {
-            if (event.key === 'Escape') {
-                const modalList = document.getElementById('modal-list');
-                const qrModal = document.getElementById('qrModal');
-                const wrapper = document.getElementById('searchWrapper');
-                const shareMenu = document.getElementById('shareMenu');
-
-                if (modalList) modalList.classList.add('hidden');
-                if (qrModal) qrModal.classList.add('hidden');
-                if (wrapper && !wrapper.classList.contains('hidden')) toggleSearch();
-                if (shareMenu && !shareMenu.classList.contains('hidden')) shareMenu.classList.add('hidden');
-            }
-        });
-
-        window.addEventListener('beforeunload', function (e) {
-            if (selectedOrder.length > 0) {
-                e.preventDefault();
-                e.returnValue = 'NẾU BẠN TẢI LẠI TRANG, CÁC BÀI KINH ĐÃ CHỌN SẼ BỊ MẤT. BẠN CÓ CHẮC CHẮN KHÔNG?';
-            }
-        });
 
     </script>
     
-    <!-- Float Container: Tìm kiếm, In, Share (Giữa cạnh dưới) -->
-    <div class="no-print fixed bottom-1 left-1/2 -translate-x-1/2 z-[100] flex flex-row items-center gap-3">
-        <!-- Khung kết quả canh giữa theo cả cụm nút, tránh tràn màn hình điện thoại. -->
-        <div id="searchWrapper" class="hidden absolute bottom-14 left-1/2 -translate-x-1/2 flex-col gap-2">
-            <input type="text" id="searchInput" oninput="searchDataDebounced()" placeholder="Tìm tên hoặc nội dung kinh..."
-                   aria-label="Tìm tên hoặc nội dung kinh"
-                   class="p-3 bg-white text-amber-900 rounded-2xl shadow-xl border-2 border-amber-600 outline-none">
-            <div id="searchResults" class="bg-white rounded-xl shadow-xl border border-amber-200 hidden"></div>
+    <!-- Nút nổi duy nhất: kéo để đổi vị trí, chạm để mở cài đặt. -->
+    <button id="floating-settings" type="button" class="no-print" aria-label="Mở công cụ và cài đặt" title="Cài đặt, mục lục và công cụ">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7z"/>
+        <path d="M19.4 15a1.6 1.6 0 0 0 .32 1.77l.05.05-1.9 1.9-.05-.05a1.6 1.6 0 0 0-1.77-.32 1.6 1.6 0 0 0-1 1.48V20h-2.7v-.17a1.6 1.6 0 0 0-1.06-1.48 1.6 1.6 0 0 0-1.77.32l-.05.05-1.9-1.9.05-.05A1.6 1.6 0 0 0 8 15a1.6 1.6 0 0 0-1.48-1H6v-2.7h.52A1.6 1.6 0 0 0 8 10.3a1.6 1.6 0 0 0-.32-1.77l-.05-.05 1.9-1.9.05.05a1.6 1.6 0 0 0 1.77.32A1.6 1.6 0 0 0 12.35 5H15v.48a1.6 1.6 0 0 0 1 1.48 1.6 1.6 0 0 0 1.77-.32l.05-.05 1.9 1.9-.05.05A1.6 1.6 0 0 0 19.4 10.3a1.6 1.6 0 0 0 1.48 1H21v2.7h-.12A1.6 1.6 0 0 0 19.4 15z" transform="translate(-1 -1)"/>
+      </svg>
+    </button>
+
+    <!-- Bảng cài đặt chỉ chiếm một phần chiều cao; LƯU và THOÁT cố định phía trên. -->
+    <section id="settings-sheet" class="no-print" role="dialog" aria-label="Công cụ và cài đặt đọc kinh" hidden>
+      <div class="settings-top">
+        <strong>⚙ CÀI ĐẶT</strong>
+        <div class="settings-top-actions">
+          <button id="save-settings" type="button" onclick="saveSettingsClicked()">LƯU</button>
+          <button id="exit-settings" type="button" onclick="closeSettings()">THOÁT</button>
         </div>
-        <!-- Search -->
-        <div class="relative flex flex-col items-center">
-            <button aria-label="Tìm kiếm" onclick="toggleSearch()" id="searchBtn" class="bg-amber-600 text-white p-2.5 rounded-full shadow-lg active:scale-90 transition-all border-2 border-white w-12 h-12 flex items-center justify-center">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-            </button>
+      </div>
+      <div class="settings-content">
+        <h3 class="settings-heading" style="margin-top:0">CÔNG CỤ</h3>
+        <div class="tools-grid">
+          <button type="button" onclick="openIndex()"><span>☷</span>MỤC LỤC</button>
+          <button id="searchBtn" type="button" onclick="toggleSearch()"><span>⌕</span>TÌM KIẾM</button>
+          <button type="button" onclick="window.print()"><span>⎙</span>IN</button>
+          <button id="shareBtn" type="button" onclick="toggleShareMenu()"><span>⇪</span>CHIA SẺ</button>
+          <button type="button" onclick="readerScrollTop()"><span>⌂</span>HOME</button>
+          <button type="button" onclick="readerScrollTop()"><span>↑</span>LÊN ĐẦU</button>
+          <button type="button" onclick="readerScrollBottom()"><span>↓</span>XUỐNG CUỐI</button>
+        </div>
+        <div id="searchWrapper" class="hidden">
+          <input type="search" id="searchInput" oninput="searchDataDebounced()" placeholder="Tìm tên hoặc nội dung kinh..." aria-label="Tìm tên hoặc nội dung kinh">
+          <div id="searchResults" class="hidden"></div>
+        </div>
+        <div id="shareMenu" class="hidden">
+          <button type="button" onclick="copyToClipboard()">🔗 SAO CHÉP LINK</button>
+          <button type="button" onclick="openQRModal()">▦ MÃ QR</button>
         </div>
 
-        <!-- In PDF Icon -->
-        <button aria-label="In tài liệu" onclick="window.print()" class="bg-emerald-600 text-white p-2.5 rounded-full shadow-lg active:scale-90 transition-all border-2 border-white flex items-center justify-center w-12 h-12">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
-        </button>
-        
-        <!-- Nút Share (Thay cho nút Copy cũ) -->
-        <div class="relative flex flex-col items-center">
-            <!-- Menu tùy chọn share (Bật lên) -->
-            <div id="shareMenu" class="hidden absolute bottom-14 flex-col bg-white rounded-xl shadow-xl border border-amber-200 overflow-hidden w-40">
-                <button onclick="copyToClipboard()" class="w-full px-4 py-3 text-sm font-semibold text-amber-900 hover:bg-amber-50 flex items-center gap-2 border-b border-gray-100">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
-                    Copy Link
-                </button>
-                <button onclick="openQRModal()" class="w-full px-4 py-3 text-sm font-semibold text-amber-900 hover:bg-amber-50 flex items-center gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm14 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" /></svg>
-                    Mã QR
-                </button>
-            </div>
-            <button aria-label="Chia sẻ" onclick="toggleShareMenu()" id="shareBtn" class="bg-amber-600 text-white p-2.5 rounded-full shadow-lg active:scale-90 transition-all border-2 border-white flex items-center justify-center w-12 h-12">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" /></svg>
-            </button>
+        <h3 class="settings-heading">HIỂN THỊ CHỮ</h3>
+        <div class="settings-field">
+          <div class="field-header"><label for="font-size-range">Kích cỡ chữ</label><span id="font-size-display" class="settings-value">23px</span></div>
+          <input type="range" id="font-size-range" min="16" max="48" step="1" value="23" oninput="setFontSize(this.value)">
+          <div style="display:flex;gap:8px">
+            <button type="button" onclick="changeFontSize(-1)" style="min-width:60px;min-height:42px;border:1px solid #fcd34d;border-radius:10px;background:white;font-weight:bold">A−</button>
+            <button type="button" onclick="changeFontSize(1)" style="min-width:60px;min-height:42px;border:1px solid #fcd34d;border-radius:10px;background:white;font-weight:bold">A+</button>
+          </div>
         </div>
-    </div>
-
-    <!-- Nút Menu Danh mục (Góc dưới trái Mobile) -->
-    <div class="mobile-only-btn no-print fixed bottom-0 left-0 z-[100]">
-        <button aria-label="Danh mục" onclick="toggleModal('modal-list')" class="bg-amber-600 text-white p-4 rounded-full shadow-lg active:scale-90 transition-all border-2 border-white">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
-            </svg>
-        </button>
-    </div>
-
-    <!-- Modal Danh mục nhanh -->
-    <div id="modal-list" class="no-print fixed inset-0 bg-black/50 z-[110] hidden backdrop-blur-sm flex items-end justify-center">
-        <div class="bg-white w-full max-w-md rounded-t-3xl p-6 space-y-4 shadow-2xl">
-            <div class="flex justify-between items-center border-b border-amber-100 pb-4">
-                <h3 class="font-extrabold text-amber-900 tracking-tighter">DANH MỤC NHANH</h3>
-                <button aria-label="Đóng danh mục" onclick="toggleModal('modal-list')" class="w-8 h-8 flex items-center justify-center bg-amber-50 rounded-full text-amber-500 text-xl">&times;</button>
-            </div>
-            <div class="grid grid-cols-1 gap-3 py-2">
-                <button onclick="scrollToSection('nghithuc-section')" class="flex items-center gap-3 p-4 bg-amber-50 text-amber-800 rounded-2xl font-bold text-left active:bg-amber-100">
-                    <span>📜</span> NGHI THỨC
-                </button>
-                <button onclick="scrollToSection('kinhtung-section')" class="flex items-center gap-3 p-4 bg-amber-50 text-amber-800 rounded-2xl font-bold text-left active:bg-amber-100">
-                    <span>📖</span> KINH TỤNG
-                </button>
-                <div class="h-[1px] bg-amber-100 my-1"></div>
-                <button onclick="confirmClear()" class="flex items-center gap-3 p-4 bg-red-50 text-red-600 rounded-2xl font-bold text-left active:bg-red-100">
-                    <span>🗑️</span> XOÁ TẤT CẢ LỰA CHỌN
-                </button>
-            </div>
+        <div class="settings-field">
+          <label for="font-family-select">Phông chữ</label>
+          <select id="font-family-select" onchange="setReaderFont(this.value)">
+            <option value="arial">Arial</option><option value="noto">Noto Sans</option>
+            <option value="times">Times New Roman</option><option value="georgia">Georgia</option>
+            <option value="tahoma">Tahoma</option><option value="verdana">Verdana</option>
+            <option value="trebuchet">Trebuchet MS</option>
+          </select>
         </div>
+        <div class="settings-field">
+          <label for="font-weight-select">Độ đậm chữ</label>
+          <select id="font-weight-select" onchange="setReaderWeight(this.value)">
+            <option value="400">Thường</option><option value="500">Vừa</option>
+            <option value="600" selected>Đậm vừa (mặc định)</option><option value="700">Đậm</option>
+          </select>
+        </div>
+        <div class="settings-field">
+          <div class="field-header"><label for="margin-range">Lề trái = lề phải</label><span class="settings-value" id="margin-value">12px</span></div>
+          <input type="range" id="margin-range" min="1" max="100" step="1" value="12" oninput="setReaderMargin(this.value)">
+          <div class="small-note">Hai lề luôn có cùng giá trị; tối thiểu 1px, tối đa 100px.</div>
+        </div>
+        <div class="settings-field">
+          <div class="field-header"><label for="line-height-range">Khoảng cách dòng</label><span class="settings-value" id="line-height-value">1.7</span></div>
+          <input type="range" id="line-height-range" min="1.3" max="2.2" step="0.1" value="1.7" oninput="setReaderLineHeight(this.value)">
+        </div>
+        <h3 class="settings-heading">NÚT NỔI</h3>
+        <div class="settings-field">
+          <div class="field-header"><label for="opacity-range">Độ trong suốt khi cuộn</label><span class="settings-value" id="opacity-value">65%</span></div>
+          <input type="range" id="opacity-range" min="0" max="70" step="1" value="65" oninput="setReaderOpacity(this.value)">
+          <div class="small-note">0% = không mờ; 70% = mờ nhiều nhất. Mặc định 65%. Dừng cuộn khoảng 2 giây thì nút hiện rõ.</div>
+        </div>
+        <button id="help-open" type="button" onclick="openHelp()">📖 HƯỚNG DẪN SỬ DỤNG</button>
+      </div>
+    </section>
+
+    <!-- Hướng dẫn sử dụng nội bộ, không cần Internet. -->
+    <div id="help-modal" class="no-print" role="dialog" aria-label="Hướng dẫn sử dụng" hidden>
+      <section class="help-card">
+        <div class="help-head"><strong>📖 HƯỚNG DẪN SỬ DỤNG</strong><button onclick="closeHelp()" type="button">ĐÓNG ✕</button></div>
+        <div class="help-body">
+          <h4>1. Chọn bài kinh</h4>
+          <p>Chạm nút bánh răng → MỤC LỤC. Trong danh sách, đánh dấu các bài nghi thức hoặc kinh muốn đọc. Nội dung được ghép theo thứ tự lựa chọn và được ghi nhớ trên thiết bị.</p>
+          <h4>2. Đọc kinh tập trung</h4>
+          <p>Vuốt lên hoặc xuống để đọc. Các thanh công cụ không hiện trên trang đọc; chỉ còn nút bánh răng. Khi đang cuộn, nút này mờ đi theo mức trong suốt bạn đã chọn, và sẽ rõ trở lại khi dừng cuộn.</p>
+          <h4>3. Mở bảng điều khiển</h4>
+          <p>Chạm nút bánh răng để mở cửa sổ CÀI ĐẶT ở phía dưới. Bảng điều khiển chỉ chiếm một phần màn hình nên bạn vẫn nhìn thấy chữ kinh phía trên. Có thể kéo nút bánh răng đến vị trí thuận tay.</p>
+          <h4>4. Điều chỉnh chữ</h4>
+          <p>Trong CÀI ĐẶT, đổi kích cỡ, phông chữ, độ đậm, khoảng cách dòng và lề trái/phải. Mọi điều chỉnh được xem trước ngay trên nội dung kinh và tự lưu trên thiết bị. Nút LƯU xác nhận việc lưu; THOÁT đóng bảng mà không làm mất cài đặt.</p>
+          <h4>5. Tìm kiếm và chọn nhanh</h4>
+          <p>Chọn TÌM KIẾM, nhập ít nhất hai ký tự trong tên hoặc nội dung kinh, rồi chạm vào kết quả. Ứng dụng sẽ mở và đưa bạn đến phần kinh tương ứng. MỤC LỤC giúp chọn hoặc bỏ chọn bài; các bộ bài tụng có thể lưu, mở và xoá ở phần danh sách.</p>
+          <h4>6. Các công cụ</h4>
+          <p>IN để in hoặc lưu PDF nếu Android hỗ trợ. CHIA SẺ để sao chép liên kết hoặc hiển thị mã QR. HOME và LÊN ĐẦU đưa về đầu phần đọc; XUỐNG CUỐI đưa đến cuối phần đọc.</p>
+          <h4>7. Sử dụng ngoại tuyến và cập nhật</h4>
+          <p>Khi có Internet, mở ứng dụng để lấy bản nội dung mới từ website nếu đã được phát hành trên GitHub Pages. Sau khi dữ liệu được lưu vào bộ nhớ, bạn có thể đọc khi không có mạng. Nếu chưa thấy thay đổi mới, đóng rồi mở lại ứng dụng lúc có mạng.</p>
+          <h4>8. Lưu ý</h4>
+          <p>Các cài đặt và bộ kinh được lưu trên chính thiết bị. Nếu xoá dữ liệu ứng dụng hoặc gỡ APK, thông tin đã lưu có thể mất. Chức năng xoá lựa chọn sẽ yêu cầu xác nhận.</p>
+        </div>
+      </section>
     </div>
-    
-    <!-- Float Container: Cuộn đầu/cuối trang (Góc dưới phải) -->
-    <div class="no-print fixed bottom-2 right-2 z-[100] flex flex-col gap-2">
-        <button aria-label="Về đầu trang" onclick="window.scrollTo({top: 0, behavior: 'smooth'})" 
-                class="bg-white text-amber-700 p-2.5 rounded-full shadow-md border-2 border-amber-600 hover:bg-amber-50 active:scale-90 transition-all duration-300">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" /></svg>
-        </button>
-        <button aria-label="Xuống cuối trang" onclick="window.scrollTo({top: document.body.scrollHeight, behavior: 'smooth'})" 
-                class="bg-white text-amber-700 p-2.5 rounded-full shadow-md border-2 border-amber-600 hover:bg-amber-50 active:scale-90 transition-all duration-300">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
-        </button>
-    </div>
+    <div id="reader-toast" class="no-print" role="status" hidden></div>
 
     <!-- Modal Phóng to QR Code -->
-    <div id="qrModal" class="hidden no-print fixed inset-0 z-[100] bg-black/60 flex flex-col items-center justify-center backdrop-blur-sm transition-opacity" onclick="closeQRModal()">
+    <div id="qrModal" class="hidden no-print fixed inset-0 z-[260] bg-black/60 flex flex-col items-center justify-center backdrop-blur-sm transition-opacity" onclick="closeQRModal()">
         <div class="bg-white p-6 rounded-2xl shadow-2xl flex flex-col items-center gap-4 max-w-[90vw]" onclick="event.stopPropagation()">
             <div class="flex justify-between w-full items-center mb-1">
                 <h3 class="font-bold text-amber-900 text-lg uppercase tracking-tighter">Mã QR Trang Web</h3>
