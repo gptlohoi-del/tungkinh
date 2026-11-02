@@ -1,0 +1,12 @@
+# Android / Gradle
+.gradle/
+**/build/
+local.properties
+*.iml
+.idea/
+*.apk
+*.aab
+*.jks
+*.keystore
+# Except do not commit debug signing keys: each CI APK uses disposable debug signing.
+.DS_Store

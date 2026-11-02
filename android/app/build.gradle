@@ -1,0 +1,50 @@
+plugins {
+    id 'com.android.application'
+}
+
+// GitHub Actions truyền đúng địa chỉ GitHub Pages theo chủ repo.
+// Khi build thủ công, truyền: -PsiteUrl=https://TEN-CHU.github.io/TEN-REPO/
+if (!project.hasProperty('siteUrl')) {
+    throw new GradleException('Thiếu -PsiteUrl=https://.../ (địa chỉ trang web KINH TỤNG)')
+}
+def siteUrl = project.property('siteUrl').toString().trim()
+def parsedSiteUrl = new URI(siteUrl)
+if (parsedSiteUrl.scheme != 'https' || parsedSiteUrl.host == null || parsedSiteUrl.userInfo != null
+        || parsedSiteUrl.fragment != null || parsedSiteUrl.query != null) {
+    throw new GradleException('siteUrl phải là địa chỉ HTTPS hợp lệ')
+}
+if (!siteUrl.endsWith('/')) siteUrl += '/'
+def escapedUrl = siteUrl.replace('\\', '\\\\').replace('"', '\\"')
+
+android {
+    namespace 'org.kinhtung.app'
+    compileSdk 35
+
+    defaultConfig {
+        applicationId 'org.kinhtung.app'
+        minSdk 24
+        targetSdk 34
+        versionCode 1
+        versionName '1.0.0'
+        buildConfigField 'String', 'SITE_URL', '"' + escapedUrl + '"'
+    }
+
+    buildFeatures {
+        buildConfig true
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    buildTypes {
+        debug {
+            // Android SDK tạo chữ ký DEBUG mặc định. Không cần Release Key.
+        }
+        release {
+            minifyEnabled false
+            // Không thiết lập release signing vì yêu cầu không dùng Release Key.
+        }
+    }
+}

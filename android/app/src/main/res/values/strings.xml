@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">KINH TỤNG</string>
+    <string name="offline_title">Không thể kết nối</string>
+    <string name="offline_help">Vui lòng kết nối Internet và thử lại. Sau khi đã mở ứng dụng trực tuyến, nội dung kinh có thể sử dụng ngoại tuyến nếu đã được lưu vào bộ nhớ đệm.</string>
+    <string name="retry">Thử lại</string>
+</resources>

@@ -1,0 +1,45 @@
+name: Cập nhật website KINH TỤNG (OTA)
+
+on:
+  push:
+    branches: [main, master]
+    paths:
+      - 'index.html'
+      - 'data.js'
+      - 'sw.js'
+      - 'manifest.json'
+      - 'icon-192.png'
+      - 'icon-512.png'
+      - 'qrcode.png'
+      - '.github/workflows/deploy-pages.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: github-pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Chỉ đóng gói nội dung website, không công khai mã Android
+        run: |
+          mkdir -p _site
+          cp index.html data.js sw.js manifest.json icon-192.png icon-512.png qrcode.png _site/
+          touch _site/.nojekyll
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+      - name: Đăng website lên GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
