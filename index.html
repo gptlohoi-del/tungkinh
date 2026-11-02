@@ -18,7 +18,10 @@
             --reader-font: Arial, sans-serif;
             --reader-weight: 600;
             --reader-side-margin: 12px;
-            --reader-line-height: 1.7; 
+            --reader-line-height: 1.7;
+            --toc-font-size: 18px;
+            --toc-item-gap: 5px;
+            --toc-line-height: 1.5; 
         }
 
         #pdf-content {
@@ -211,12 +214,49 @@
     .reading-main { min-height:0; height:100%; overflow-y:auto; overscroll-behavior:contain; }
     .reading-page { padding:12px 0 80px !important; box-shadow:none !important; border:0 !important; }
     #pdf-content pre { overflow-wrap:anywhere; }
-    .item-title { font-size:17px !important; line-height:1.5; font-weight:600; }
+    /* MỤC LỤC: có cài đặt độc lập với phông và kích cỡ nội dung kinh. */
+    #main-checklist, #sutra-checklist { display:block; }
+    .toc-row { margin-bottom: var(--toc-item-gap); }
+    .toc-row[hidden] { display:none !important; }
+    .toc-entry-label { display:flex; align-items:flex-start; width:100%; gap:10px;
+        padding:12px 8px; min-height:48px; cursor:pointer; border-radius:10px;
+        border-bottom:1px solid #fef3c7; box-sizing:border-box; }
+    .toc-entry-label:hover, .toc-entry-label:focus-within { background:#fffbeb; }
+    .toc-entry-label input[type=checkbox] { flex:0 0 auto; width:22px;height:22px;margin:3px 0 0;accent-color:#b45309; }
+    .toc-entry-label .item-title { flex:1 1 auto; min-width:0; font-size:var(--toc-font-size) !important;
+        line-height:var(--toc-line-height) !important; font-weight:600 !important;
+        overflow-wrap:break-word; word-break:normal; text-align:justify; text-align-last:left; }
+    .toc-entry-label .selection-number { flex:0 0 22px; margin-top:3px; }
+    .toc-filter-area { background:#fffdf7; border:1px solid #fde68a; border-radius:12px;
+        padding:10px; margin:10px 0 12px; }
+    #toc-filter-input { width:100%;min-height:48px;padding:10px 12px; border:1px solid #d97706;
+        border-radius:10px; font-size:16px; background:#fff; }
+    .toc-filters { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:5px; margin-top:9px; }
+    .toc-filters button { min-width:0; min-height:44px; padding:5px 3px; border-radius:8px;
+        border:1px solid #fcd34d; background:white; font-weight:700; font-size:12px; color:#78350f; }
+    .toc-filters button[aria-pressed=true] { background:#92400e; color:white; border-color:#92400e; }
+    .toc-bulk-actions { display:flex; gap:7px; margin-top:9px; }
+    .toc-bulk-actions button { flex:1 1 0;min-height:44px; padding:6px 3px;
+        background:#fffbeb; color:#92400e; border:1px solid #fcd34d;
+        border-radius:9px; font-size:13px; font-weight:750; }
+    #toc-read-selected { width:100%; min-height:48px; margin-top:9px; border-radius:9px;
+        background:#15803d; color:white; font-size:15px; font-weight:800; }
+    #toc-read-selected:disabled { opacity:.55; cursor:not-allowed; }
+    #toc-result-summary { font-size:13px; color:#92400e; margin-top:8px; }
+    #toc-selection-count { font-weight:700;color:#92400e; white-space:nowrap; font-size:13px; }
+    .search-result-card { padding:10px 12px; border-bottom:1px solid #fde68a; }
+    .search-result-actions { display:flex; gap:8px; justify-content:flex-end; margin-top:8px; }
+    .search-result-actions button { min-height:40px; padding:7px 12px; border-radius:9px;
+        border:1px solid #fcd34d; background:#fffbeb; color:#78350f; font-weight:700; font-size:13px; }
+    .search-result-actions button.primary { background:#b45309;color:white;border-color:#b45309; }
+    .search-result-actions button:disabled { opacity:.55; }
+    @media (max-width:360px) { .toc-filters button {font-size:11px;} }
+
     aside label { min-height:48px; }
 
     /* Danh sách bài kinh là ngăn riêng; bình thường chỉ thấy nội dung. */
     #reading-sidebar { position:fixed !important; right:0; top:0; bottom:0; z-index:220;
-        width:min(430px,100vw) !important; max-width:100vw; height:100dvh;
+        width:min(470px,100vw) !important; max-width:100vw; height:100dvh;
         transform:translateX(105%); visibility:hidden; transition:transform .22s ease,visibility .22s;
         overflow-y:auto; overscroll-behavior:contain; background:white;
         padding:0 14px 30px !important; }
@@ -274,7 +314,7 @@
     #searchWrapper.hidden { display:none !important; }
     #searchInput { width:100%; min-height:46px; border:1px solid #d97706;border-radius:10px;
         padding:10px; outline-offset:2px; background:#fff; }
-    #searchResults { width:100%; max-height:190px; overflow-y:auto; background:#fff;
+    #searchResults { width:100%; max-height:280px; overflow-y:auto; background:#fff;
         border:1px solid #fde68a;border-radius:10px; }
     .search-result-title { flex:1 1 0%;min-width:0;white-space:normal;overflow-wrap:anywhere;line-height:1.5; }
     .search-result-type { flex:none; white-space:nowrap; }
@@ -320,8 +360,24 @@
     
         <aside id="reading-sidebar" aria-label="Chọn bài kinh" class="reading-sidebar no-print w-full md:w-96 bg-white border-r border-amber-100 overflow-y-auto p-4 space-y-6">
             <div class="sidebar-sticky-header">
-                <strong class="text-amber-900">MỤC LỤC VÀ CHỌN BÀI KINH</strong>
+                <div><strong class="text-amber-900">MỤC LỤC</strong><div id="toc-selection-count" aria-live="polite">Đã chọn 0 bài</div></div>
                 <button onclick="closeIndex()" aria-label="Đóng mục lục" class="bg-amber-700 text-white rounded-lg px-4 py-2 font-bold min-h-11">ĐÓNG ✕</button>
+            </div>
+            <div class="toc-filter-area">
+                <label for="toc-filter-input" class="block text-sm font-bold text-amber-900 mb-2">TÌM NHANH THEO TÊN BÀI</label>
+                <input id="toc-filter-input" type="search" placeholder="Nhập tên kinh hoặc nghi thức…" autocomplete="off" oninput="filterTocList()">
+                <div class="toc-filters" role="group" aria-label="Lọc mục lục">
+                    <button type="button" class="toc-filter-button" data-filter="all" aria-pressed="true" onclick="setTocCategory('all')">TẤT CẢ</button>
+                    <button type="button" class="toc-filter-button" data-filter="ritual" aria-pressed="false" onclick="setTocCategory('ritual')">NGHI THỨC</button>
+                    <button type="button" class="toc-filter-button" data-filter="sutra" aria-pressed="false" onclick="setTocCategory('sutra')">KINH</button>
+                    <button type="button" class="toc-filter-button" data-filter="selected" aria-pressed="false" onclick="setTocCategory('selected')">ĐÃ CHỌN</button>
+                </div>
+                <div id="toc-result-summary" aria-live="polite">Chọn một hoặc nhiều ô để ghép bài kinh theo thứ tự.</div>
+                <div class="toc-bulk-actions">
+                    <button type="button" onclick="bulkTocSelection(true)">✓ CHỌN ĐANG HIỆN</button>
+                    <button type="button" onclick="bulkTocSelection(false)">− BỎ CHỌN</button>
+                </div>
+                <button id="toc-read-selected" type="button" onclick="readSelectedToc()" disabled>ĐỌC 0 BÀI ĐÃ CHỌN</button>
             </div>
             <button onclick="confirmClear()" class="w-full mb-4 py-2.5 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded-xl transition-all active:scale-95 uppercase tracking-tighter shadow-md flex items-center justify-center gap-2">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -395,31 +451,46 @@
             searchTimeout = setTimeout(searchData, 300);
         }
 
+        function escapeHtml(str) {
+            return String(str).replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+        }
         function searchData() {
             if (typeof fullData === 'undefined') return;
             const query = removeAccents(document.getElementById('searchInput').value.trim());
             const resultsContainer = document.getElementById('searchResults');
-            
             if (query.length < 2) {
-                resultsContainer.innerHTML = "";
+                resultsContainer.textContent = '';
                 resultsContainer.classList.add('hidden');
                 return;
             }
-
             const matches = fullData.filter(item => !isPlaceholder(item) && item._searchString && item._searchString.includes(query));
-
-            if (matches.length > 0) {
-                resultsContainer.classList.remove('hidden');
-                resultsContainer.innerHTML = matches.map(item => `
-                    <div onclick="goToItem(${item.id})" class="p-3 hover:bg-amber-50 border-b border-amber-100 text-sm text-amber-900 cursor-pointer flex items-start justify-between gap-2">
-                        <span class="search-result-title">${item.title}</span>
-                        <span class="search-result-type text-[10px] text-amber-500 font-bold">${item.type === 'sub' ? 'KINH' : 'NGHI THỨC'}</span>
-                    </div>
-                `).join('');
+            if (!matches.length) {
+                resultsContainer.innerHTML = '<div class="p-3 text-sm text-amber-700">Không tìm thấy. Hãy thử cụm từ khác.</div>';
             } else {
-                resultsContainer.innerHTML = "<div class='p-3 text-xs text-amber-400 italic'>Không tìm thấy...</div>";
-                resultsContainer.classList.remove('hidden');
+                const shown=matches.slice(0,40);
+                resultsContainer.innerHTML = '<div class="p-2 text-xs text-amber-800 bg-amber-50">Tìm thấy '+matches.length+' bài'+(matches.length>shown.length?'; đang hiển thị 40 kết quả':'')+'. Chọn THÊM để ghép nhiều bài, hoặc ĐỌC BÀI để xem ngay.</div>'+
+                    shown.map(item=>{
+                        const added=selectedOrder.includes(item.id);
+                        return `<div class="search-result-card">
+                            <div class="flex items-start justify-between gap-2">
+                                <span class="search-result-title font-semibold text-amber-900">${escapeHtml(item.title)}</span>
+                                <span class="search-result-type text-xs text-amber-600 font-bold">${item.type==='sub'?'KINH':'NGHI THỨC'}</span>
+                            </div>
+                            <div class="search-result-actions">
+                                <button type="button" onclick="addSearchResult(${item.id})" ${added?'disabled':''}>${added?'✓ ĐÃ CHỌN':'+ THÊM'}</button>
+                                <button type="button" class="primary" onclick="goToItem(${item.id})">ĐỌC BÀI</button>
+                            </div>
+                        </div>`;
+                    }).join('');
             }
+            resultsContainer.classList.remove('hidden');
+        }
+        function addSearchResult(id) {
+            if (!selectedOrder.includes(id)) {
+                toggleSection(id);
+                showToast('Đã thêm bài vào danh sách đọc');
+            }
+            searchData();
         }
 
         const PROFILE_KEY='tungKinhReadingProfilesV1';
@@ -459,6 +530,74 @@
         function isPlaceholder(item) {
             return [56,57,58,124,125].includes(item.id) && !(item.content || item.content_open || item.content_close || '').trim();
         }
+        let tocCategory='all';
+        function setTocCategory(category) {
+            if (!['all','ritual','sutra','selected'].includes(category)) return;
+            tocCategory=category;
+            document.querySelectorAll('.toc-filter-button').forEach(button=>{
+                button.setAttribute('aria-pressed',String(button.dataset.filter===category));
+            });
+            filterTocList();
+        }
+        function getVisibleTocItems() {
+            const query=removeAccents((document.getElementById('toc-filter-input')?.value||'').trim());
+            return fullData.filter(item=>{
+                if (isPlaceholder(item)) return false;
+                if (tocCategory==='ritual' && item.type==='sub') return false;
+                if (tocCategory==='sutra' && item.type!=='sub') return false;
+                if (tocCategory==='selected' && !selectedOrder.includes(item.id)) return false;
+                return !query || removeAccents(item.title).includes(query);
+            });
+        }
+        function filterTocList() {
+            if (typeof fullData === 'undefined') return;
+            const filtered=getVisibleTocItems();
+            const ids=new Set(filtered.map(item=>item.id));
+            let nRitual=0,nSutra=0;
+            fullData.forEach(item=>{
+                const row=document.getElementById('item-'+item.id);
+                if (!row) return;
+                row.hidden=!ids.has(item.id);
+                if (!row.hidden) {
+                    if (item.type==='sub') nSutra++; else nRitual++;
+                }
+            });
+            const ritualHeading=document.getElementById('nghithuc-section');
+            const sutraHeading=document.getElementById('kinhtung-section');
+            if (ritualHeading) ritualHeading.parentElement.hidden=nRitual===0;
+            if (sutraHeading) sutraHeading.parentElement.hidden=nSutra===0;
+            document.getElementById('toc-selection-count').textContent='Đã chọn '+selectedOrder.length+' bài';
+            document.getElementById('toc-result-summary').textContent='Hiển thị '+filtered.length+' bài • Đã chọn '+selectedOrder.length+'. Các bài được ghép theo thứ tự đánh dấu.';
+            const btn=document.getElementById('toc-read-selected');
+            btn.textContent='ĐỌC '+selectedOrder.length+' BÀI ĐÃ CHỌN';
+            btn.disabled=selectedOrder.length===0;
+        }
+        function bulkTocSelection(shouldSelect) {
+            const visible=getVisibleTocItems();
+            if (!visible.length) {showToast('Không có bài nào trong danh sách đang lọc');return;}
+            const targets=visible.filter(item=>shouldSelect?!selectedOrder.includes(item.id):selectedOrder.includes(item.id));
+            if (!targets.length) {showToast(shouldSelect?'Đã chọn tất cả bài đang hiển thị':'Không có bài nào để bỏ chọn');return;}
+            if (shouldSelect && targets.length>25 && !confirm('Bạn muốn thêm '+targets.length+' bài đang hiển thị vào danh sách đọc?')) return;
+            if (!shouldSelect && targets.length>25 && !confirm('Bạn muốn bỏ chọn '+targets.length+' bài đang hiển thị?')) return;
+            if (shouldSelect) {
+                for (const item of targets) {
+                    if (item.type==='ritual_wrapper') {
+                        selectedOrder=selectedOrder.filter(id=>fullData.find(d=>d.id===id)?.type!=='ritual_wrapper');
+                    }
+                    selectedOrder.push(item.id);
+                }
+            } else {
+                const ids=new Set(targets.map(x=>x.id));
+                selectedOrder=selectedOrder.filter(id=>!ids.has(id));
+            }
+            selectedOrder=[...new Set(selectedOrder)];
+            syncChecklistsUI();updateUI();saveToLocalStorage();updateShareableURL();
+            showToast((shouldSelect?'Đã thêm ':'Đã bỏ chọn ')+targets.length+' bài');
+        }
+        function readSelectedToc() {
+            if (!selectedOrder.length) {showToast('Hãy chọn ít nhất một bài kinh');return;}
+            closeIndex();readerScrollTop();
+        }
         function initChecklists() {
             const mainContainer = document.getElementById('main-checklist');
             const sutraContainer = document.getElementById('sutra-checklist');
@@ -467,12 +606,10 @@
 
             fullData.filter(item => !isPlaceholder(item)).forEach(item => {
                 const rowHtml = `
-                    <div id="item-${item.id}" class="transition-all duration-300">
-                        <label class="flex items-center justify-between p-3 hover:bg-amber-50 rounded-lg cursor-pointer border-b border-amber-50">
-                            <div class="flex items-center gap-3">
-                                <input type="checkbox" id="cb-${item.id}" class="w-5 h-5 rounded text-amber-600 focus:ring-amber-500" onchange="toggleSection(${item.id})">
-                                <span class="item-title text-sm text-amber-900">${item.title}</span>
-                            </div>
+                    <div id="item-${item.id}" class="toc-row" data-toc-type="${item.type === 'sub' ? 'sutra' : 'ritual'}" data-toc-title="${escapeHtml(removeAccents(item.title))}">
+                        <label class="toc-entry-label">
+                            <input type="checkbox" id="cb-${item.id}" onchange="toggleSection(${item.id})">
+                            <span class="item-title text-amber-900">${escapeHtml(item.title)}</span>
                         </label>
                     </div>`;
                 
@@ -516,6 +653,7 @@
                     if (badge) badge.remove();
                 }
             });
+            filterTocList();
         }
             
         function goToItem(id) {
@@ -696,6 +834,9 @@
         let readerMargin=12; // lề trái = lề phải
         let readerOpacity=65; // 0..70 (%)
         let readerLineHeight=1.7;
+        let tocFontSize=18;
+        let tocItemGap=5;
+        let tocLineHeight=1.5;
         let isReadingScroll=false;
         let scrollFadeTimer=null;
 
@@ -708,7 +849,8 @@
                 localStorage.setItem(SETTINGS_KEY,JSON.stringify({
                     size:currentFontSize/16, font:document.getElementById('font-family-select').value,
                     weight:document.getElementById('font-weight-select').value,
-                    margin:readerMargin, opacity:readerOpacity, lineHeight:readerLineHeight
+                    margin:readerMargin, opacity:readerOpacity, lineHeight:readerLineHeight,
+                    tocFontSize:tocFontSize, tocItemGap:tocItemGap, tocLineHeight:tocLineHeight
                 }));
                 return true;
             } catch(e) { console.warn('Không lưu được cài đặt đọc kinh',e); return false; }
@@ -754,6 +896,21 @@
             });
             saveReaderSettings(); // tự lưu, nút LƯU xác nhận thêm
         }
+        function applyTocSettings() {
+            const root=document.documentElement;
+            root.style.setProperty('--toc-font-size',tocFontSize+'px');
+            root.style.setProperty('--toc-item-gap',tocItemGap+'px');
+            root.style.setProperty('--toc-line-height',tocLineHeight.toFixed(1));
+            document.getElementById('toc-font-size-range').value=String(tocFontSize);
+            document.getElementById('toc-font-size-value').textContent=tocFontSize+'px';
+            document.getElementById('toc-item-gap-range').value=String(tocItemGap);
+            document.getElementById('toc-item-gap-value').textContent=tocItemGap+'px';
+            document.getElementById('toc-line-height-range').value=String(tocLineHeight);
+            document.getElementById('toc-line-height-value').textContent=tocLineHeight.toFixed(1);
+        }
+        function setTocFontSize(value) {tocFontSize=Math.round(numberWithin(value,14,30,18));applyTocSettings();saveReaderSettings();}
+        function setTocItemGap(value) {tocItemGap=Math.round(numberWithin(value,0,24,5));applyTocSettings();saveReaderSettings();}
+        function setTocLineHeight(value) {tocLineHeight=Math.round(numberWithin(value,1.2,2.2,1.5)*10)/10;applyTocSettings();saveReaderSettings();}
         function changeFontSize(delta) {
             currentFontSize=numberWithin(currentFontSize+delta,16,48,23);
             applyReaderSettings();
@@ -774,7 +931,11 @@
                 if(v.margin!==undefined) readerMargin=Math.round(numberWithin(v.margin,1,100,12));
                 if(v.opacity!==undefined) readerOpacity=Math.round(numberWithin(v.opacity,0,70,65));
                 if(v.lineHeight!==undefined) readerLineHeight=Math.round(numberWithin(v.lineHeight,1.3,2.2,1.7)*10)/10;
+                if(v.tocFontSize!==undefined) tocFontSize=Math.round(numberWithin(v.tocFontSize,14,30,18));
+                if(v.tocItemGap!==undefined) tocItemGap=Math.round(numberWithin(v.tocItemGap,0,24,5));
+                if(v.tocLineHeight!==undefined) tocLineHeight=Math.round(numberWithin(v.tocLineHeight,1.2,2.2,1.5)*10)/10;
             } catch(e) {console.warn('Cài đặt cũ không hợp lệ',e);}
+            applyTocSettings();
             applyReaderSettings(false);
         }
         function showToast(message) {
@@ -992,7 +1153,7 @@
         <h3 class="settings-heading" style="margin-top:0">CÔNG CỤ</h3>
         <div class="tools-grid">
           <button type="button" onclick="openIndex()"><span>☷</span>MỤC LỤC</button>
-          <button id="searchBtn" type="button" onclick="toggleSearch()"><span>⌕</span>TÌM KIẾM</button>
+          <button id="searchBtn" type="button" onclick="toggleSearch()"><span>⌕</span>FIND NỘI DUNG</button>
           <button type="button" onclick="window.print()"><span>⎙</span>IN</button>
           <button id="shareBtn" type="button" onclick="toggleShareMenu()"><span>⇪</span>CHIA SẺ</button>
           <button type="button" onclick="readerScrollTop()"><span>⌂</span>HOME</button>
@@ -1000,7 +1161,7 @@
           <button type="button" onclick="readerScrollBottom()"><span>↓</span>XUỐNG CUỐI</button>
         </div>
         <div id="searchWrapper" class="hidden">
-          <input type="search" id="searchInput" oninput="searchDataDebounced()" placeholder="Tìm tên hoặc nội dung kinh..." aria-label="Tìm tên hoặc nội dung kinh">
+          <input type="search" id="searchInput" oninput="searchDataDebounced()" placeholder="Nhập từ/câu trong nội dung hoặc tên kinh..." aria-label="Tìm tên hoặc nội dung kinh">
           <div id="searchResults" class="hidden"></div>
         </div>
         <div id="shareMenu" class="hidden">
@@ -1042,6 +1203,21 @@
           <div class="field-header"><label for="line-height-range">Khoảng cách dòng</label><span class="settings-value" id="line-height-value">1.7</span></div>
           <input type="range" id="line-height-range" min="1.3" max="2.2" step="0.1" value="1.7" oninput="setReaderLineHeight(this.value)">
         </div>
+        <h3 class="settings-heading">MỤC LỤC</h3>
+        <div class="small-note">Các thông số này chỉ ảnh hưởng đến danh sách chọn kinh/nghi thức, không đổi cỡ chữ nội dung đọc.</div>
+        <div class="settings-field">
+          <div class="field-header"><label for="toc-font-size-range">Cỡ chữ tên kinh, nghi thức</label><span id="toc-font-size-value" class="settings-value">18px</span></div>
+          <input type="range" id="toc-font-size-range" min="14" max="30" step="1" value="18" oninput="setTocFontSize(this.value)">
+        </div>
+        <div class="settings-field">
+          <div class="field-header"><label for="toc-item-gap-range">Khoảng cách giữa các mục</label><span id="toc-item-gap-value" class="settings-value">5px</span></div>
+          <input type="range" id="toc-item-gap-range" min="0" max="24" step="1" value="5" oninput="setTocItemGap(this.value)">
+        </div>
+        <div class="settings-field">
+          <div class="field-header"><label for="toc-line-height-range">Giãn dòng tên bài dài</label><span id="toc-line-height-value" class="settings-value">1.5</span></div>
+          <input type="range" id="toc-line-height-range" min="1.2" max="2.2" step="0.1" value="1.5" oninput="setTocLineHeight(this.value)">
+          <div class="small-note">Tên dài được căn đều hai bên ở các dòng giữa; dòng cuối căn trái để dễ đọc.</div>
+        </div>
         <h3 class="settings-heading">NÚT NỔI</h3>
         <div class="settings-field">
           <div class="field-header"><label for="opacity-range">Độ trong suốt khi cuộn</label><span class="settings-value" id="opacity-value">65%</span></div>
@@ -1058,7 +1234,8 @@
         <div class="help-head"><strong>📖 HƯỚNG DẪN SỬ DỤNG</strong><button onclick="closeHelp()" type="button">ĐÓNG ✕</button></div>
         <div class="help-body">
           <h4>1. Chọn bài kinh</h4>
-          <p>Chạm nút bánh răng → MỤC LỤC. Trong danh sách, đánh dấu các bài nghi thức hoặc kinh muốn đọc. Nội dung được ghép theo thứ tự lựa chọn và được ghi nhớ trên thiết bị.</p>
+          <p>Chạm bánh răng → MỤC LỤC. Gõ tên bài vào ô TÌM NHANH (không cần đúng dấu), hoặc lọc TẤT CẢ / NGHI THỨC / KINH / ĐÃ CHỌN. Đánh dấu một hay nhiều ô; số trên từng mục là thứ tự bạn chọn. Nhấn ĐỌC ... BÀI ĐÃ CHỌN để trở lại trang đọc.</p>
+          <p>Nút CHỌN ĐANG HIỆN sẽ thêm các bài phù hợp bộ lọc; BỎ CHỌN chỉ bỏ các bài đang hiện. Bạn vẫn có thể lưu danh sách thường dùng thành BỘ BÀI TỤNG.</p>
           <h4>2. Đọc kinh tập trung</h4>
           <p>Vuốt lên hoặc xuống để đọc. Các thanh công cụ không hiện trên trang đọc; chỉ còn nút bánh răng. Khi đang cuộn, nút này mờ đi theo mức trong suốt bạn đã chọn, và sẽ rõ trở lại khi dừng cuộn.</p>
           <h4>3. Mở bảng điều khiển</h4>
@@ -1066,7 +1243,8 @@
           <h4>4. Điều chỉnh chữ</h4>
           <p>Trong CÀI ĐẶT, đổi kích cỡ, phông chữ, độ đậm, khoảng cách dòng và lề trái/phải. Mọi điều chỉnh được xem trước ngay trên nội dung kinh và tự lưu trên thiết bị. Nút LƯU xác nhận việc lưu; THOÁT đóng bảng mà không làm mất cài đặt.</p>
           <h4>5. Tìm kiếm và chọn nhanh</h4>
-          <p>Chọn TÌM KIẾM, nhập ít nhất hai ký tự trong tên hoặc nội dung kinh, rồi chạm vào kết quả. Ứng dụng sẽ mở và đưa bạn đến phần kinh tương ứng. MỤC LỤC giúp chọn hoặc bỏ chọn bài; các bộ bài tụng có thể lưu, mở và xoá ở phần danh sách.</p>
+          <p>Chọn FIND NỘI DUNG để tìm một từ hay câu trong tên và toàn bộ nội dung kinh (ít nhất 2 ký tự, không phân biệt dấu). Với mỗi kết quả, nhấn + THÊM để thêm vào danh sách mà không rời bảng tìm kiếm, hoặc ĐỌC BÀI để mở bài tương ứng ngay.</p>
+          <p>Trong CÀI ĐẶT → MỤC LỤC có các thanh trượt riêng để chỉnh cỡ chữ, khoảng cách giữa các mục và giãn dòng của tên bài dài. Tên dài được căn đều hai bên, dòng cuối căn trái cho dễ đọc.</p>
           <h4>6. Các công cụ</h4>
           <p>IN để in hoặc lưu PDF nếu Android hỗ trợ. CHIA SẺ để sao chép liên kết hoặc hiển thị mã QR. HOME và LÊN ĐẦU đưa về đầu phần đọc; XUỐNG CUỐI đưa đến cuối phần đọc.</p>
           <h4>7. Sử dụng ngoại tuyến và cập nhật</h4>
