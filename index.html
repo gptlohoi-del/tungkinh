@@ -9,6 +9,8 @@
     <meta name="theme-color" content="#d97706">
     <link rel="apple-touch-icon" href="./icon-192.png">
     <style>
+        /* Giá trị CSS ở đây chỉ dùng trước khi JavaScript khởi tạo;
+           mọi MIN / MAX / STEP / DEFAULT thực tế nằm trong NUMERIC_SETTINGS. */
         :root {
             --accent-color: #d97706; 
             --pre-bg: #fffff7; 
@@ -431,6 +433,73 @@
     <script src="./data.js" defer></script>
 
     <script>
+        /* ================================================================
+         * CẤU HÌNH CÁC THÔNG SỐ SỐ — CHỈ SỬA TẠI ĐÂY
+         * min: nhỏ nhất | max: lớn nhất | step: mỗi lần nhấn +/-
+         * default: giá trị mặc định cho người dùng chưa có cài đặt lưu.
+         * Giữ: min <= default <= max, step > 0.
+         * ================================================================ */
+        const NUMERIC_SETTINGS = {
+            fontSize:       { min: 4,  max: 55,  step: 1,   default: 23 },  // px: cỡ chữ nội dung kinh
+            readerMargin:   { min: 1,   max: 100, step: 1,   default: 12 },  // px: lề trái = phải
+            lineHeight:     { min: 0.2, max: 2.2, step: 0.1, default: 1.7 }, // giãn dòng nội dung
+            settingsHeight: { min: 40,  max: 90,  step: 1,   default: 45 },  // %: chiều cao cửa sổ
+            tocFontSize:    { min: 4,   max: 55,  step: 1,   default: 18 },  // px: tên kinh trong mục lục
+            tocItemGap:     { min: 0,   max: 24,  step: 1,   default: 5  },  // px: khoảng cách giữa mục
+            tocLineHeight:  { min: 0.5, max: 2.2, step: 0.1, default: 1.5 }, // giãn dòng tên dài
+            opacity:        { min: 0,   max: 70,  step: 1,   default: 65 }   // %: độ mờ nút nổi
+        };
+        // Tương thích dữ liệu cũ: localStorage lưu cỡ chữ theo bội số của 16px.
+        // Không thay đổi số này khi sửa MIN/MAX/STEP/DEFAULT phía trên.
+        const LEGACY_FONT_BASE_PX = 16;
+        const NUMERIC_RANGE_IDS = {
+            fontSize: 'font-size-range', readerMargin: 'margin-range',
+            lineHeight: 'line-height-range', settingsHeight: 'settings-height-range',
+            tocFontSize: 'toc-font-size-range', tocItemGap: 'toc-item-gap-range',
+            tocLineHeight: 'toc-line-height-range', opacity: 'opacity-range'
+        };
+        function numericPrecision(setting) {
+            const c = NUMERIC_SETTINGS[setting];
+            return Math.max(...[c.min,c.max,c.step,c.default].map(n => {
+                const t=String(n);
+                return t.includes('.') ? t.split('.')[1].length : 0;
+            }));
+        }
+        function normalizeNumeric(setting, value) {
+            const c=NUMERIC_SETTINGS[setting];
+            const n=Number(value);
+            const fallback=Math.max(c.min,Math.min(c.max,c.default));
+            if (!Number.isFinite(n)) return normalizeNumeric(setting,fallback);
+            // Làm tròn theo STEP (tính từ MIN) để +/- và thanh trượt luôn đồng bộ.
+            const v=Math.max(c.min,Math.min(c.max,n));
+            const rounded=c.min+Math.round((v-c.min)/c.step)*c.step;
+            return Number(Math.max(c.min,Math.min(c.max,rounded)).toFixed(Math.min(8,numericPrecision(setting)+2)));
+        }
+        function formatNumeric(setting,value) {
+            return Number(value).toFixed(numericPrecision(setting));
+        }
+        function initNumericRangeConfig() {
+            for (const [setting,id] of Object.entries(NUMERIC_RANGE_IDS)) {
+                const c=NUMERIC_SETTINGS[setting];
+                const range=document.getElementById(id);
+                if (!range) throw new Error('Không tìm thấy thanh trượt: '+id);
+                if (!(Number.isFinite(c.min)&&Number.isFinite(c.max)&&Number.isFinite(c.step)&&Number.isFinite(c.default)
+                    && c.min<=c.default && c.default<=c.max && c.step>0 && c.min<c.max)) {
+                    throw new Error('Cấu hình MIN/MAX/STEP/DEFAULT không hợp lệ: '+setting);
+                }
+                range.min=String(c.min);
+                range.max=String(c.max);
+                range.step=String(c.step);
+                range.value=String(normalizeNumeric(setting,c.default));
+            }
+            // Các ghi chú và hướng dẫn cũng lấy giới hạn từ cùng một nơi.
+            document.querySelectorAll('[data-numeric-limits]').forEach(el=>{
+                const key=el.dataset.numericLimits;
+                const c=NUMERIC_SETTINGS[key];
+                if (c) el.textContent=formatNumeric(key,c.min)+'–'+formatNumeric(key,c.max);
+            });
+        }
+
         let selectedOrder = [];
 
         function removeAccents(str) {
@@ -795,14 +864,14 @@
             trebuchet:'"Trebuchet MS", Arial, sans-serif'
         };
         const SETTINGS_KEY='tungKinhReaderSettings';
-        let currentFontSize=23; // px
-        let readerMargin=12; // lề trái = lề phải
-        let readerOpacity=65; // 0..70 (%)
-        let readerLineHeight=1.7;
-        let tocFontSize=18;
-        let tocItemGap=5;
-        let tocLineHeight=1.5;
-        let settingsHeight=45; // phần trăm chiều cao màn hình: 40..90
+        let currentFontSize=NUMERIC_SETTINGS.fontSize.default; // px
+        let readerMargin=NUMERIC_SETTINGS.readerMargin.default; // lề trái = lề phải
+        let readerOpacity=NUMERIC_SETTINGS.opacity.default; // độ trong suốt (%)
+        let readerLineHeight=NUMERIC_SETTINGS.lineHeight.default;
+        let tocFontSize=NUMERIC_SETTINGS.tocFontSize.default;
+        let tocItemGap=NUMERIC_SETTINGS.tocItemGap.default;
+        let tocLineHeight=NUMERIC_SETTINGS.tocLineHeight.default;
+        let settingsHeight=NUMERIC_SETTINGS.settingsHeight.default; // % chiều cao cửa sổ
         let readerJustify=true;
         let isReadingScroll=false;
         let scrollFadeTimer=null;
@@ -814,7 +883,7 @@
         function saveReaderSettings() {
             try {
                 localStorage.setItem(SETTINGS_KEY,JSON.stringify({
-                    size:currentFontSize/16, font:document.getElementById('font-family-select').value,
+                    size:currentFontSize/LEGACY_FONT_BASE_PX, font:document.getElementById('font-family-select').value,
                     weight:document.getElementById('font-weight-select').value,
                     margin:readerMargin, opacity:readerOpacity, lineHeight:readerLineHeight,
                     tocFontSize:tocFontSize, tocItemGap:tocItemGap, tocLineHeight:tocLineHeight,
@@ -854,7 +923,7 @@
             document.getElementById('margin-range').value=String(readerMargin);
             document.getElementById('opacity-value').textContent=readerOpacity+'%';
             document.getElementById('opacity-range').value=String(readerOpacity);
-            document.getElementById('line-height-value').textContent=readerLineHeight.toFixed(1);
+            document.getElementById('line-height-value').textContent=formatNumeric('lineHeight',readerLineHeight);
             document.getElementById('line-height-range').value=String(readerLineHeight);
             refreshFloatOpacity();
             if(bookmark) requestAnimationFrame(()=>{
@@ -869,33 +938,33 @@
             const root=document.documentElement;
             root.style.setProperty('--toc-font-size',tocFontSize+'px');
             root.style.setProperty('--toc-item-gap',tocItemGap+'px');
-            root.style.setProperty('--toc-line-height',tocLineHeight.toFixed(1));
+            root.style.setProperty('--toc-line-height',formatNumeric('tocLineHeight',tocLineHeight));
             document.getElementById('toc-font-size-range').value=String(tocFontSize);
             document.getElementById('toc-font-size-value').textContent=tocFontSize+'px';
             document.getElementById('toc-item-gap-range').value=String(tocItemGap);
             document.getElementById('toc-item-gap-value').textContent=tocItemGap+'px';
             document.getElementById('toc-line-height-range').value=String(tocLineHeight);
-            document.getElementById('toc-line-height-value').textContent=tocLineHeight.toFixed(1);
+            document.getElementById('toc-line-height-value').textContent=formatNumeric('tocLineHeight',tocLineHeight);
         }
-        function setTocFontSize(value) {tocFontSize=Math.round(numberWithin(value,4,30,18));applyTocSettings();saveReaderSettings();}
-        function setTocItemGap(value) {tocItemGap=Math.round(numberWithin(value,0,24,5));applyTocSettings();saveReaderSettings();}
-        function setTocLineHeight(value) {tocLineHeight=Math.round(numberWithin(value,1.2,2.2,1.5)*10)/10;applyTocSettings();saveReaderSettings();}
+        function setTocFontSize(value) {tocFontSize=normalizeNumeric('tocFontSize',value);applyTocSettings();saveReaderSettings();}
+        function setTocItemGap(value) {tocItemGap=normalizeNumeric('tocItemGap',value);applyTocSettings();saveReaderSettings();}
+        function setTocLineHeight(value) {tocLineHeight=normalizeNumeric('tocLineHeight',value);applyTocSettings();saveReaderSettings();}
         function changeFontSize(delta) {
-            currentFontSize=numberWithin(currentFontSize+delta,16,48,23);
+            currentFontSize=normalizeNumeric('fontSize',currentFontSize+delta*NUMERIC_SETTINGS.fontSize.step);
             applyReaderSettings();
         }
-        function setFontSize(value) {currentFontSize=Math.round(numberWithin(value,16,48,23));applyReaderSettings();}
+        function setFontSize(value) {currentFontSize=normalizeNumeric('fontSize',value);applyReaderSettings();}
         function setReaderFont(font) {if(READER_FONTS[font]) applyReaderSettings();}
         function setReaderWeight(weight) {if(['400','500','600','700'].includes(weight)) applyReaderSettings();}
-        function setReaderMargin(value) {readerMargin=Math.round(numberWithin(value,1,100,12));applyReaderSettings();}
-        function setReaderOpacity(value) {readerOpacity=Math.round(numberWithin(value,0,70,65));applyReaderSettings(false);}
-        function setReaderLineHeight(value) {readerLineHeight=Math.round(numberWithin(value,1.3,2.2,1.7)*10)/10;applyReaderSettings();}
+        function setReaderMargin(value) {readerMargin=normalizeNumeric('readerMargin',value);applyReaderSettings();}
+        function setReaderOpacity(value) {readerOpacity=normalizeNumeric('opacity',value);applyReaderSettings(false);}
+        function setReaderLineHeight(value) {readerLineHeight=normalizeNumeric('lineHeight',value);applyReaderSettings();}
         function setReaderJustify(value) {readerJustify=(value!=='left');applyReaderSettings();}
         function setSettingsHeight(value) {
-            settingsHeight=Math.round(numberWithin(value,40,90,45));
+            settingsHeight=normalizeNumeric('settingsHeight',value);
             document.getElementById('settings-sheet').style.height=settingsHeight+'dvh';
             document.getElementById('settings-height-range').value=String(settingsHeight);
-            document.getElementById('settings-height-value').textContent=settingsHeight+'%';
+            document.getElementById('settings-height-value').textContent=formatNumeric('settingsHeight',settingsHeight)+'%';
             saveReaderSettings();
         }
         function setupNumericControls() {
@@ -936,16 +1005,16 @@
             document.getElementById('font-weight-select').value='600'; // mặc định đậm vừa
             try {
                 const v=JSON.parse(localStorage.getItem(SETTINGS_KEY)||'{}');
-                if(v.size!==undefined) currentFontSize=Math.round(numberWithin(Number(v.size)*16,16,48,23));
+                if(v.size!==undefined) currentFontSize=normalizeNumeric('fontSize',Number(v.size)*LEGACY_FONT_BASE_PX);
                 if(READER_FONTS[v.font]) document.getElementById('font-family-select').value=v.font;
                 if(['400','500','600','700'].includes(v.weight)) document.getElementById('font-weight-select').value=v.weight;
-                if(v.margin!==undefined) readerMargin=Math.round(numberWithin(v.margin,1,100,12));
-                if(v.opacity!==undefined) readerOpacity=Math.round(numberWithin(v.opacity,0,70,65));
-                if(v.lineHeight!==undefined) readerLineHeight=Math.round(numberWithin(v.lineHeight,1.3,2.2,1.7)*10)/10;
-                if(v.tocFontSize!==undefined) tocFontSize=Math.round(numberWithin(v.tocFontSize,4,30,18));
-                if(v.tocItemGap!==undefined) tocItemGap=Math.round(numberWithin(v.tocItemGap,0,24,5));
-                if(v.tocLineHeight!==undefined) tocLineHeight=Math.round(numberWithin(v.tocLineHeight,1.2,2.2,1.5)*10)/10;
-                if(v.settingsHeight!==undefined) settingsHeight=Math.round(numberWithin(v.settingsHeight,40,90,45));
+                if(v.margin!==undefined) readerMargin=normalizeNumeric('readerMargin',v.margin);
+                if(v.opacity!==undefined) readerOpacity=normalizeNumeric('opacity',v.opacity);
+                if(v.lineHeight!==undefined) readerLineHeight=normalizeNumeric('lineHeight',v.lineHeight);
+                if(v.tocFontSize!==undefined) tocFontSize=normalizeNumeric('tocFontSize',v.tocFontSize);
+                if(v.tocItemGap!==undefined) tocItemGap=normalizeNumeric('tocItemGap',v.tocItemGap);
+                if(v.tocLineHeight!==undefined) tocLineHeight=normalizeNumeric('tocLineHeight',v.tocLineHeight);
+                if(v.settingsHeight!==undefined) settingsHeight=normalizeNumeric('settingsHeight',v.settingsHeight);
                 if(typeof v.readerJustify==='boolean') readerJustify=v.readerJustify;
             } catch(e) {console.warn('Cài đặt cũ không hợp lệ',e);}
             applyTocSettings();
@@ -1059,6 +1128,7 @@
                 if ('serviceWorker' in navigator && !location.pathname.includes('/modules/')) {
                     navigator.serviceWorker.register('./sw.js').catch(e => console.warn('SW:',e));
                 }
+                initNumericRangeConfig();
                 setupNumericControls();
                 loadReaderSettings();
                 setupFloatingSettings();
@@ -1192,8 +1262,8 @@
 
         <h3 class="settings-heading">HIỂN THỊ CHỮ</h3>
         <div class="settings-field">
-          <div class="field-header"><label for="font-size-range">Kích cỡ chữ</label><span id="font-size-display" class="settings-value">23px</span></div>
-          <input type="range" id="font-size-range" min="16" max="48" step="1" value="23" oninput="setFontSize(this.value)">
+          <div class="field-header"><label for="font-size-range">Kích cỡ chữ</label><span id="font-size-display" class="settings-value">—</span></div>
+          <input type="range" id="font-size-range" oninput="setFontSize(this.value)">
         </div>
         <div class="settings-field">
           <label for="font-family-select">Phông chữ</label>
@@ -1212,13 +1282,13 @@
           </select>
         </div>
         <div class="settings-field">
-          <div class="field-header"><label for="margin-range">Lề trái = lề phải</label><span class="settings-value" id="margin-value">12px</span></div>
-          <input type="range" id="margin-range" min="1" max="100" step="1" value="12" oninput="setReaderMargin(this.value)">
-          <div class="small-note">Hai lề luôn có cùng giá trị; tối thiểu 1px, tối đa 100px.</div>
+          <div class="field-header"><label for="margin-range">Lề trái = lề phải</label><span class="settings-value" id="margin-value">—</span></div>
+          <input type="range" id="margin-range" oninput="setReaderMargin(this.value)">
+          <div class="small-note">Hai lề luôn có cùng giá trị; giới hạn <span data-numeric-limits="readerMargin"></span>px.</div>
         </div>
         <div class="settings-field">
-          <div class="field-header"><label for="line-height-range">Khoảng cách dòng</label><span class="settings-value" id="line-height-value">1.7</span></div>
-          <input type="range" id="line-height-range" min="1.3" max="2.2" step="0.1" value="1.7" oninput="setReaderLineHeight(this.value)">
+          <div class="field-header"><label for="line-height-range">Khoảng cách dòng</label><span class="settings-value" id="line-height-value">—</span></div>
+          <input type="range" id="line-height-range" oninput="setReaderLineHeight(this.value)">
         </div>
         <div class="settings-field">
           <label for="reader-align-select">Căn chữ khi tự xuống dòng</label>
@@ -1230,30 +1300,30 @@
         </div>
         <h3 class="settings-heading">CỬA SỔ CÀI ĐẶT</h3>
         <div class="settings-field">
-          <div class="field-header"><label for="settings-height-range">Chiều cao cửa sổ</label><span id="settings-height-value" class="settings-value">45%</span></div>
-          <input type="range" id="settings-height-range" min="40" max="90" step="1" value="45" oninput="setSettingsHeight(this.value)">
-          <div class="small-note">Tùy chỉnh từ 40% đến 90%, tự lưu cho lần mở sau.</div>
+          <div class="field-header"><label for="settings-height-range">Chiều cao cửa sổ</label><span id="settings-height-value" class="settings-value">—</span></div>
+          <input type="range" id="settings-height-range" oninput="setSettingsHeight(this.value)">
+          <div class="small-note">Tùy chỉnh <span data-numeric-limits="settingsHeight"></span>%, tự lưu cho lần mở sau.</div>
         </div>
         <h3 class="settings-heading">MỤC LỤC</h3>
         <div class="small-note">Các thông số này chỉ ảnh hưởng đến danh sách chọn kinh/nghi thức, không đổi cỡ chữ nội dung đọc.</div>
         <div class="settings-field">
-          <div class="field-header"><label for="toc-font-size-range">Cỡ chữ tên kinh, nghi thức</label><span id="toc-font-size-value" class="settings-value">18px</span></div>
-          <input type="range" id="toc-font-size-range" min="4" max="30" step="1" value="18" oninput="setTocFontSize(this.value)">
+          <div class="field-header"><label for="toc-font-size-range">Cỡ chữ tên kinh, nghi thức</label><span id="toc-font-size-value" class="settings-value">—</span></div>
+          <input type="range" id="toc-font-size-range" oninput="setTocFontSize(this.value)">
         </div>
         <div class="settings-field">
-          <div class="field-header"><label for="toc-item-gap-range">Khoảng cách giữa các mục</label><span id="toc-item-gap-value" class="settings-value">5px</span></div>
-          <input type="range" id="toc-item-gap-range" min="0" max="24" step="1" value="5" oninput="setTocItemGap(this.value)">
+          <div class="field-header"><label for="toc-item-gap-range">Khoảng cách giữa các mục</label><span id="toc-item-gap-value" class="settings-value">—</span></div>
+          <input type="range" id="toc-item-gap-range" oninput="setTocItemGap(this.value)">
         </div>
         <div class="settings-field">
-          <div class="field-header"><label for="toc-line-height-range">Giãn dòng tên bài dài</label><span id="toc-line-height-value" class="settings-value">1.5</span></div>
-          <input type="range" id="toc-line-height-range" min="1.2" max="2.2" step="0.1" value="1.5" oninput="setTocLineHeight(this.value)">
+          <div class="field-header"><label for="toc-line-height-range">Giãn dòng tên bài dài</label><span id="toc-line-height-value" class="settings-value">—</span></div>
+          <input type="range" id="toc-line-height-range" oninput="setTocLineHeight(this.value)">
           <div class="small-note">Tên dài được căn đều hai bên ở các dòng giữa; dòng cuối căn trái để dễ đọc.</div>
         </div>
         <h3 class="settings-heading">NÚT NỔI</h3>
         <div class="settings-field">
-          <div class="field-header"><label for="opacity-range">Độ trong suốt khi cuộn</label><span class="settings-value" id="opacity-value">65%</span></div>
-          <input type="range" id="opacity-range" min="0" max="70" step="1" value="65" oninput="setReaderOpacity(this.value)">
-          <div class="small-note">0% = không mờ; 70% = mờ nhiều nhất. Mặc định 65%. Dừng cuộn khoảng 2 giây thì nút hiện rõ.</div>
+          <div class="field-header"><label for="opacity-range">Độ trong suốt khi cuộn</label><span class="settings-value" id="opacity-value">—</span></div>
+          <input type="range" id="opacity-range" oninput="setReaderOpacity(this.value)">
+          <div class="small-note">Giới hạn độ trong suốt <span data-numeric-limits="opacity"></span>%. Giá trị mặc định theo khối cấu hình; dừng cuộn khoảng 2 giây thì nút hiện rõ.</div>
         </div>
         <button id="help-open" type="button" onclick="openHelp()">📖 HƯỚNG DẪN SỬ DỤNG</button>
       </div>
@@ -1270,12 +1340,12 @@
           <h4>2. Đọc kinh tập trung</h4>
           <p>Vuốt lên hoặc xuống để đọc. Các thanh công cụ không hiện trên trang đọc; chỉ còn nút bánh răng. Khi đang cuộn, nút này mờ đi theo mức trong suốt bạn đã chọn, và sẽ rõ trở lại khi dừng cuộn.</p>
           <h4>3. Mở bảng điều khiển</h4>
-          <p>Chạm nút bánh răng để mở cửa sổ CÀI ĐẶT ở phía dưới. Chiều cao cửa sổ điều chỉnh 40–90% và được lưu cho lần sau; bạn vẫn nhìn thấy chữ kinh phía trên. Có thể kéo nút bánh răng đến vị trí thuận tay.</p>
+          <p>Chạm nút bánh răng để mở cửa sổ CÀI ĐẶT ở phía dưới. Chiều cao cửa sổ điều chỉnh <span data-numeric-limits="settingsHeight"></span>% và được lưu cho lần sau; bạn vẫn nhìn thấy chữ kinh phía trên. Có thể kéo nút bánh răng đến vị trí thuận tay.</p>
           <h4>4. Điều chỉnh chữ</h4>
           <p>Trong CÀI ĐẶT, đổi kích cỡ, phông chữ, độ đậm, khoảng cách dòng và lề trái/phải. Mọi điều chỉnh được xem trước ngay trên nội dung kinh và tự lưu. Dùng hai nút −/+ để chỉnh số; thanh trượt chỉ xuất hiện khi nhấn DÙNG THANH TRƯỢT. Nút THOÁT hoặc chạm ngoài cửa sổ đều lưu và đóng.</p>
           <h4>5. Tìm kiếm và chọn nhanh</h4>
           <p>Mở MỤC LỤC rồi nhập tên hoặc cụm từ xuất hiện trong nội dung kinh. Các kết quả phù hợp hiện ngay trong danh sách và có ô chọn bên cạnh. Khi tìm xong, nhấn ĐỌC BÀI ĐÃ CHỌN.</p>
-          <p>Trong CÀI ĐẶT → MỤC LỤC có các nút −/+ riêng để chỉnh cỡ chữ (4–30px), khoảng cách giữa các mục và giãn dòng của tên bài dài. Tên dài được căn đều hai bên, dòng cuối căn trái cho dễ đọc.</p>
+          <p>Trong CÀI ĐẶT → MỤC LỤC có các nút −/+ riêng để chỉnh cỡ chữ (<span data-numeric-limits="tocFontSize"></span>px), khoảng cách giữa các mục và giãn dòng của tên bài dài. Tên dài được căn đều hai bên, dòng cuối căn trái cho dễ đọc.</p>
           <h4>6. Các công cụ</h4>
           <p>IN để in hoặc lưu PDF nếu Android hỗ trợ. CHIA SẺ để sao chép liên kết hoặc hiển thị mã QR. HOME và LÊN ĐẦU đưa về đầu phần đọc; XUỐNG CUỐI đưa đến cuối phần đọc.</p>
           <h4>7. Sử dụng ngoại tuyến và cập nhật</h4>
