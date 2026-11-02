@@ -97,11 +97,7 @@ function offlineFallbackPage() {
 /* ------------------------------- Cấu hình -------------------------------- */
 
 /** Đổi CACHE_VERSION mỗi khi thay đổi danh sách/chiến lược cache */
-<<<<<<< HEAD
 const CACHE_VERSION = 'v11-landscape-mobile';
-=======
-const CACHE_VERSION = 'v10-justify';
->>>>>>> e339d4be1b88076cda0b7db3ed03ea874967a550
 const CACHE_PREFIX = 'tung-kinh-cache-';
 const CACHE_NAME = CACHE_PREFIX + CACHE_VERSION;
 
