@@ -75,6 +75,14 @@
             color: var(--body-text) !important;
         }
 
+        /* Căn đều văn xuôi; không can thiệp các dòng thơ/kệ xuống dòng chủ ý. */
+        #pdf-content pre.prose-justified,
+        #pdf-content p,
+        #pdf-content blockquote {
+            text-align: justify;
+            text-align-last: left;
+        }
+
         .selection-number {
             display: inline-flex;
             align-items: center;
@@ -518,6 +526,17 @@
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
+        // Nội dung kinh dùng chung thẻ <pre> cho cả văn xuôi lẫn thơ/kệ.
+        // Chỉ đánh dấu các khối có dòng văn dài; các dòng xuống hàng chủ ý
+        // vẫn căn trái nhờ text-align-last: left trong CSS.
+        function alignProseInReading(root) {
+            root.querySelectorAll('pre').forEach(block => {
+                const lines = block.textContent.split(/\r?\n/);
+                const hasProse = lines.some(line => line.trim().length >= 95);
+                block.classList.toggle('prose-justified', hasProse);
+            });
+        }
+
         function updateUI() {
             const previewArea = document.getElementById('pdf-content');
             const placeholder = document.getElementById('preview-placeholder');
@@ -562,6 +581,7 @@
             });
 
             previewArea.innerHTML = renderBlocks.join('<div style="page-break-after: always; margin: 10px 0;"></div>');
+            alignProseInReading(previewArea);
         }
 
         function saveToLocalStorage() {
